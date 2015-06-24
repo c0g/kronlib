@@ -2,8 +2,6 @@ cmake_minimum_required(VERSION 3.2)
 project(KronMat)
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/CMake/Modules)
 
-include(/Users/tom/Code/dlib/dlib/cmake)
-
 find_package(BOOST REQUIRED timer)
 find_package(BLAS REQUIRED)
 find_package(CBLAS REQUIRED)
