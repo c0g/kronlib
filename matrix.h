@@ -6,6 +6,7 @@
 #define KRONMAT_MATRIX_H
 
 #include <vector>
+#include <iostream>
 #include <assert.h>
 #include "blas_wrap.h"
 #include <cmath>
@@ -252,6 +253,18 @@
             matrix<T> ans = (*this);
             for (T & el : (*ans.data)) el = -el;
             return ans;
+        }
+
+        bool operator==(const matrix & other) const {
+            assert(nR() == other.nR());
+            assert(nC() == other.nC());
+            bool match = true;
+            for (int r = 0; r < nR(); ++r) {
+                for (int c = 0; c < nC(); ++c) {
+                    match &= ((*this)(r,c) == other(r,c));
+                }
+            }
+            return match;
         }
 
         void minus_inplace()
