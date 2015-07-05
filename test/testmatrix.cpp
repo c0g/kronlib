@@ -7,6 +7,17 @@
 #include "iostream"
 #include "gtest/gtest.h"
 
+TEST(Matrix, SetScalar) {
+    matrix<float> mat(2, 3);
+    mat = 1, 2, 3, 4, 5, 6;
+    mat = 1;
+    for (int r = 0; r < 2; ++r) {
+        for (int c = 0; c < 3; ++c) {
+            EXPECT_EQ(mat(r, c), 1);
+        }
+    }
+}
+
 TEST(Matrix, EqualsAssignment) {
     matrix<float> mat(2, 3);
     mat = 1, 2, 3, 4, 5, 6;
