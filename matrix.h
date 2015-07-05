@@ -10,6 +10,7 @@
 #include <assert.h>
 #include "blas_wrap.h"
 #include <cmath>
+#include "google_float.h"
 
 
     template <typename T>
@@ -95,9 +96,13 @@
         }
 
         T& operator()(long ridx, long cidx) {
+            assert(ridx<nR());
+            assert(cidx<nC());
             return data[vecidx(ridx, cidx)];
         }
         T operator()(long ridx, long cidx) const {
+            assert(ridx<nR());
+            assert(cidx<nC());
             return data[vecidx(ridx, cidx)];
         }
 
@@ -172,7 +177,7 @@
             return matrix<T>(new_data, nR(), other.nC(), other.nC(), 0, 0, false);
         }
 
-        matrix<T> elemwise_mult(const matrix<T> &other) const {
+        matrix<T> hadamard(const matrix<T> &other) const {
             assert(nR() == other.nR());
             assert(nC() == other.nC());
 
@@ -261,7 +266,7 @@
             bool match = true;
             for (int r = 0; r < nR(); ++r) {
                 for (int c = 0; c < nC(); ++c) {
-                    match &= ((*this)(r,c) == other(r,c));
+                    match &= FloatingPoint<T>((*this)(r,c)).AlmostEquals(FloatingPoint<T>(other(r,c)));
                 }
             }
             return match;

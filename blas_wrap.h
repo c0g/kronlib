@@ -10,28 +10,28 @@
     };
 
 
-    inline void blas_gemm(const enum CBLAS_ORDER __Order,
-                   const enum CBLAS_TRANSPOSE __TransA,
-                   const enum CBLAS_TRANSPOSE __TransB, const int __M, const int __N,
-                   const int __K, const double __alpha, const double *__A,
-                   const int __lda, const double *__B, const int __ldb,
-                   const double __beta, double *__C, const int __ldc) {
-        cblas_dgemm(__Order, __TransA, __TransB, __M, __N, __K,
-                    __alpha, __A, __lda,
-                    __B, __ldb,
-                    __beta, __C, __ldc);
+    inline void blas_gemm(const enum CBLAS_ORDER Order,
+                   const enum CBLAS_TRANSPOSE TransA,
+                   const enum CBLAS_TRANSPOSE TransB, const int M, const int N,
+                   const int K, const double alpha, const double *A,
+                   const int lda, const double *B, const int ldb,
+                   const double beta, double *C, const int ldc) {
+        cblas_dgemm(Order, TransA, TransB, M, N, K,
+                    alpha, A, lda,
+                    B, ldb,
+                    beta, C, ldc);
     }
 
-    inline void blas_gemm(const enum CBLAS_ORDER __Order,
-                   const enum CBLAS_TRANSPOSE __TransA,
-                   const enum CBLAS_TRANSPOSE __TransB, const int __M, const int __N,
-                   const int __K, const float __alpha, const float *__A,
-                   const int __lda, const float *__B, const int __ldb,
-                   const float __beta, float *__C, const int __ldc) {
-        cblas_sgemm(__Order, __TransA, __TransB, __M, __N, __K,
-                    __alpha, __A, __lda,
-                    __B, __ldb,
-                    __beta, __C, __ldc);
+    inline void blas_gemm(const enum CBLAS_ORDER Order,
+                   const enum CBLAS_TRANSPOSE TransA,
+                   const enum CBLAS_TRANSPOSE TransB, const int M, const int N,
+                   const int K, const float alpha, const float *A,
+                   const int lda, const float *B, const int ldb,
+                   const float beta, float *C, const int ldc) {
+        cblas_sgemm(Order, TransA, TransB, M, N, K,
+                    alpha, A, lda,
+                    B, ldb,
+                    beta, C, ldc);
     }
 
     inline float blas_dot(int N, const float * A, int strideA, const float * B, int strideB) {
