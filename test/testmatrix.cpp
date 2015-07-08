@@ -3,7 +3,7 @@
 //
 
 #include "testmatrix.h"
-#include "../matrix.h"
+#include "matrix.h"
 #include "iostream"
 #include "gtest/gtest.h"
 
@@ -76,6 +76,17 @@ TEST(Matrix, TransposeIndexing) {
     }
 }
 
+TEST(Matrix, Negate) {
+    matrix<float> mat(2, 3);
+    mat = 1, 2, 3, 4, 5, 6;
+    auto mat2 = -mat;
+    for (int r = 0; r < 2; ++r) {
+        for (int c = 0; c < 3; ++c) {
+            EXPECT_EQ(mat(r,c), -mat2(r, c));
+        }
+    }
+}
+
 TEST(Matrix, ScalarAdd) {
     matrix<float> mat(2, 3);
     mat = 1, 2, 3, 4, 5, 6;
@@ -83,6 +94,17 @@ TEST(Matrix, ScalarAdd) {
     for (int r = 0; r < 2; ++r) {
         for (int c = 0; c < 3; ++c) {
             EXPECT_EQ(mat(r,c) + 1, mat2(r, c));
+        }
+    }
+}
+
+TEST(Matrix, ScalarMinus) {
+    matrix<float> mat(2, 3);
+    mat = 1, 2, 3, 4, 5, 6;
+    matrix<float> mat2 = mat - 1;
+    for (int r = 0; r < 2; ++r) {
+        for (int c = 0; c < 3; ++c) {
+            EXPECT_EQ(mat(r,c) - 1, mat2(r, c));
         }
     }
 }
@@ -102,6 +124,21 @@ TEST(Matrix, MatrixAdd) {
     }
 }
 
+TEST(Matrix, MatrixMinus) {
+    matrix<float> mat1(2, 3);
+    mat1 = 1, 2, 3, 4, 5, 6;
+    matrix<float> mat2(2, 3);
+    mat2 = 0, 1, 2, 3, 4, 5;
+
+    auto mat_sum = mat1 - mat2;
+
+    for (int r = 0; r < 2; ++r) {
+        for (int c = 0; c < 3; ++c) {
+            EXPECT_EQ(mat1(r,c) - mat2(r,c), mat_sum(r, c));
+        }
+    }
+}
+
 TEST(Matrix, ScalarMul) {
     matrix<float> mat(2, 3);
     mat = 1, 2, 3, 4, 5, 6;
@@ -112,6 +149,19 @@ TEST(Matrix, ScalarMul) {
         }
     }
 }
+
+TEST(Matrix, ScalarDiv) {
+    matrix<float> mat(2, 3);
+    mat = 1, 2, 3, 4, 5, 6;
+    matrix<float> mat2 = mat / 2;
+    for (int r = 0; r < 2; ++r) {
+        for (int c = 0; c < 3; ++c) {
+            EXPECT_EQ(mat(r,c) / 2, mat2(r, c));
+        }
+    }
+}
+
+
 
 TEST(Matrix, Hadamard) {
     matrix<float> mat1(2, 3);
@@ -158,6 +208,16 @@ TEST(Matrix, ProductWithTrans) {
     EXPECT_EQ(mat_prod, mat_ans);
 }
 
+TEST(Matrix, ModifyTrans) {
+    matrix<float> mat1(2, 2);
+    mat1 = 1, 2, 3, 4;
+    auto mat2 = mat1.transpose();
+
+    mat2(0,0) += 1;
+    
+    EXPECT_NE(mat1, mat2);
+}
+
 TEST(Matrix, ProductShape) {
     matrix<float> mat1(2, 3);
     mat1 = 1, 2, 3, 4, 5, 6;
@@ -176,6 +236,7 @@ TEST(Matrix, ProductShape) {
     EXPECT_EQ(mat_prod.nC(), mat_ans.nC());
 
 }
+
 
 TEST(Matrix, BigProductSingle) {
     int M = 100;
@@ -247,8 +308,81 @@ TEST(Matrix, BigProductDouble) {
 
 }
 
+TEST(Matrix, TdotProduct) {
+    matrix<float> mat1(2, 2);
+    mat1 = 1, 2, 3, 4;
+    
+    matrix<float> mat2(2, 2);
+    mat2 = 1, 2, 3, 5;
+    
+    
+    auto mat_ans = mat1.transpose() * mat2; 
+    auto mat_prod = mat1.Tdot(mat2);
 
+    EXPECT_EQ(mat_prod, mat_ans);
 
+}
+
+TEST(Matrix, Reshape) {
+    matrix<float> mat1(2, 3);
+    mat1 = 1, 2, 3, 4, 5, 6;
+    
+    matrix<float> mat2(3, 2);
+    mat2 = 1, 2, 3, 4, 5, 6;
+
+    EXPECT_EQ(mat2.reshape(2,3), mat1);
+}
+
+TEST(Matrix, MutableTranspose) {
+    matrix<float> mat1(2, 3);
+    mat1 = 1, 2, 3, 4, 5, 6;
+    
+    auto mat2 = mat1.transpose();
+    mat1.mutable_transpose();
+
+    EXPECT_EQ(mat2, mat1);
+}
+
+TEST(Matrix, MutableTransposeX2) {
+    matrix<float> mat1(2, 3);
+    mat1 = 1, 2, 3, 4, 5, 6;
+    
+    auto mat2 = mat1;
+    mat1.mutable_transpose();
+    mat1.mutable_transpose();
+
+    EXPECT_EQ(mat2, mat1);
+}
+
+TEST(Matrix, MutableReshape) {
+    matrix<float> mat1(2, 3);
+    mat1 = 1, 2, 3, 4, 5, 6;
+    matrix<float> mat2(3, 2);
+    mat2 = 1, 2, 3, 4, 5, 6;
+    
+    mat1.mutable_reshape(3,2);
+
+    EXPECT_EQ(mat2, mat1);
+}
+
+TEST(Matrix, MutableReshapeProduct) {
+    matrix<float> mat1(2, 3);
+    mat1 = 1, 2, 3, 4, 5, 6;
+    
+    auto mat2 = mat1;
+    mat2.mutable_reshape(3,2);
+
+    matrix<float> mat3(3, 2);
+    mat3 = 1, 2, 3, 4, 5, 6;
+
+    EXPECT_EQ(mat1 * mat2, mat1 * mat3);
+}
+
+TEST(Matrix, Trace) {
+    matrix<float> mat(2,2);
+    mat = 1,2,3,4;
+    EXPECT_EQ(mat.trace(), 5);
+}
 
 int main(int argc, char **argv) {
     std::cout << "Running test" << std::endl;
