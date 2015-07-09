@@ -13,6 +13,7 @@
 #include "distances.h"
 #include "parameter.h"
 #include "kronecker_matrix.h"
+#include "cholesky.h"
 
 using ntype = double;
 
@@ -25,21 +26,11 @@ using ntype = double;
 int main() {
 
 
-    matrix<float> mat1(2, 2);
-    mat1 = 1,2,3,4;
-    matrix<float> mat2(2, 2);
-    mat2 = 3,4,5,6;
-    matrix<float> mat3(2, 3);
-    mat3 = 3,4,5,6,7,8;
+    matrix<float> mat(3, 3);
+    mat = 1, 3, 4, 5, 7, 9, 4 ,5 ,6;
 
-
-
-    kronecker_matrix<float> kron_mat;
-    kron_mat.push_matrix(mat1);
-    kron_mat.push_matrix(mat2);
-    kron_mat.push_matrix(mat3);
-
-    auto mat = kron_mat.full();
+    Cholesky<float> chol(mat);
+    matrix<float> cholmat = chol.cholmat();
 
 
 

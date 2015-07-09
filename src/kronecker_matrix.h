@@ -30,7 +30,6 @@ private:
     T sign = 1;
 
 public:
-
     void push_matrix(const matrix<T> & mat)
     {
         sub_matrices.push_back(mat);
@@ -42,10 +41,16 @@ public:
         return kronecker_matrix(newsub_matrices);
     }
 
-    // matrix<T> opertator*(const matrix<T> & other) {
-    //     // assert(other.nC() == 1 && "The full matrix can only be a column vector");
-    //     return kronmat_dot_fullvec((*this), other);
-    // }
+    matrix<T> operator*(const matrix<T> & other) {
+        // assert(other.nC() == 1 && "The full matrix can only be a column vector");
+        return kronmat_dot_fullvec(sub_matrices, other);
+    }
+    matrix<T> Tdot(const matrix<T> & other) {
+        // assert(other.nC() == 1 && "The full matrix can only be a column vector");
+        for (matrix<T> & m : sub_matrices) m.mutable_transpose();
+        auto ans = kronmat_dot_fullvec((*this), other);
+        for (matrix<T> & m : sub_matrices) m.mutable_transpose();
+    }
 
 
     long nR()
@@ -67,40 +72,26 @@ public:
 
     matrix<T> full()
     {
-        return sign * multiplier * kron_full(sub_matrices);
+        return kron_full(sub_matrices);
     }
 
-    void operator*=(T val)
-    {
-        sign *= signum(val);
-        multiplier *= val;
-    }
 
-    kronecker_matrix<T> operator*(T val) const
-    {
-        auto ans = (*this);
-        ans *= val;
-        return ans;
-    }
 
     bool operator==(const kronecker_matrix<T> & other) const
     {
         bool match = true;
-        T my_mat_mult = std::pow(std::abs(multiplier), 1.0 / sub_matrices.size());
-        T other_mat_mult = pow(other.multiplier, 1.0 / other.sub_matrices.size());
         assert(sub_matrices.size() == other.sub_matrices.size());
         for (size_t idx = 0; idx < sub_matrices.size(); ++idx) {
-            match &= (sign * my_mat_mult * sub_matrices[idx] == other.sign * other_mat_mult * other.sub_matrices[idx]);
+            match &= (sub_matrices[idx] == other.sub_matrices[idx]);
         }
         return match;
     }
     void print_submatrices(std::ostream & out)
     {
         int matnum = 1;
-        T mat_mult = pow(multiplier, 1.0 / sub_matrices.size());
         for (auto m : sub_matrices) {
             out << "Submatrix: " << matnum++ << std::endl;
-            out << sign * mat_mult * m << std::endl;
+            out << m << std::endl;
         }
     }
 };
@@ -111,6 +102,12 @@ std::ostream& operator<<(
 {
     K.print_submatrices(out);
     return out;
+}
+
+template <typename T, typename N>
+kronecker_matrix<T> operator*(N val, kronecker_matrix<T> m)
+{
+    return m * val;
 }
 
 

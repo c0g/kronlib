@@ -10,7 +10,6 @@
 #include <assert.h>
 #include "blas_wrap.h"
 #include <cmath>
-#include "base_matrix.h"
 
 
 template <typename T>
@@ -36,13 +35,20 @@ public:
     };
     void set_size(long r, long c)
     {
-        nr = r;
-        nc = c;
+        if (trans) {
+            nr = c;
+            nc = r;
+        } else {
+            nr = r;
+            nc = c;
+        }
         r_stride = c;
         data.resize(nr * nc, 0);
+
     }
 private:
     std::vector<T> data;
+
     long nr;
     long nc;
     long r_stride;
@@ -74,6 +80,14 @@ private:
 
 public:
 
+    CBLAS_ORDER getOrder() const
+    {
+        return order;
+    }
+    const std::vector<T> & getConstData() const
+    {
+        return data;
+    }
 
     long nR() const
     {
@@ -114,17 +128,26 @@ public:
 
     matrix<T> reshape(long newr, long newc) const
     {
+        //TODO: return a 'view' if possible;
         assert(nR() * nC() == newr * newc);
-        return matrix(data, newr, newc, newc,  trans);
+        std::vector<T> newdata;
+        for (int r = 0; r < nR(); ++r) {
+            for (int c = 0; c < nC(); ++c) {
+                newdata.push_back((*this)(r, c));
+            }
+        }
+        return matrix(newdata, newr, newc, newc, false);
     }
 
-    void mutable_reshape(long newr, long newc)
-    {
+    void mutable_reshape(long newr, long newc) {
         assert(nR() * nC() == newr * newc);
+        assert(!trans);
         nr = newr;
-        r_stride = newc;
         nc = newc;
+        r_stride = newc;
     }
+
+
 
     T& operator()(long ridx, long cidx)
     {
@@ -138,7 +161,6 @@ public:
         assert(cidx < nC());
         return data[vecidx(ridx, cidx)];
     }
-
 
 
 
@@ -329,6 +351,11 @@ public:
         for (T & el : (*data)) el = exp(el);
     }
 
+    matrix<T> solve(const matrix<T> & other)
+    {
+
+    }
+
 private:
     struct literal_assign_helper {
 
@@ -415,10 +442,22 @@ matrix<T> exp(const matrix<T> & m)
     return ans;
 }
 
-template <typename T>
-matrix<T> operator*(T val, const matrix<T> & m)
+template <typename T, typename N>
+matrix<T> operator*(N val, const matrix<T> & m)
 {
     return m * val;
 }
+
+
+
+template <typename T>
+class LU {
+private:
+    std::vector<T> LU;
+    std::vector<int> pivots;
+public:
+    matrix<T> inv() const;
+    matrix<T> solve(const matrix<T> & other) const;
+};
 
 #endif //KRONMAT_MATRIX_H

@@ -35,6 +35,7 @@ TEST(KronMatrix, KronFull2)
     EXPECT_EQ(kron_mat.full(), mat_ans);
 }
 
+
 TEST(KronMatrix, KronFull3)
 {
     matrix<float> mat1(2, 2);
@@ -91,54 +92,25 @@ TEST(KronMatrix, KronDotKron)
     EXPECT_EQ(kron_mat.full(), mat_ans);
 }
 
-
-TEST(KronMatrix, TestScalarMult)
+TEST(KronMatrix, KronDotFullVec)
 {
-    matrix<float> mat1a(2, 2);
-    mat1a = 1, 2, 3, 4;
-    matrix<float> mat1b(2, 2);
-    mat1b = 2, 4, 6, 8;
+    matrix<float> mat1(2, 2);
+    mat1 = 1, 2, 3, 4;
+    matrix<float> mat2(2, 2);
+    mat2 = 3, 4, 5, 6;
 
-    matrix<float> mat2a(2, 2);
-    mat2a = 2, 4, 6, 8;
-    matrix<float> mat2b(2, 2);
-    mat2b = 4, 8, 12, 16;
+    kronecker_matrix<float> kmat;
+    kmat.push_matrix(mat1);
+    kmat.push_matrix(mat2);
 
-    kronecker_matrix<float> mat1;
-    mat1.push_matrix(mat1a);
-    mat1.push_matrix(mat1b);
+    matrix<float> dot_with(4,1);
+    dot_with = 0, 1, 2, 3;
 
-    kronecker_matrix<float> mat2;
-    mat2.push_matrix(mat2a);
-    mat2.push_matrix(mat2b);
-    mat1 *= 4;
-
-    EXPECT_EQ(mat1, mat2);
+    matrix<float> ans(4,1);
+    ans = 40, 62, 84, 130;
+    EXPECT_EQ(kmat * dot_with, ans);
 }
 
-TEST(KronMatrix, TestNegativeScalarMult)
-{
-    matrix<float> mat1a(2, 2);
-    mat1a = 1, 2, 3, 4;
-    matrix<float> mat1b(2, 2);
-    mat1b = 2, 4, 6, 8;
-
-    matrix<float> mat2a(2, 2);
-    mat2a = -2, -4, -6, -8;
-    matrix<float> mat2b(2, 2);
-    mat2b = -4, -8, -12, -16;
-
-    kronecker_matrix<float> mat1;
-    mat1.push_matrix(mat1a);
-    mat1.push_matrix(mat1b);
-
-    kronecker_matrix<float> mat2;
-    mat2.push_matrix(mat2a);
-    mat2.push_matrix(mat2b);
-    mat1 *= -4;
-
-    EXPECT_EQ(mat1, mat2);
-}
 
 int main(int argc, char **argv)
 {
