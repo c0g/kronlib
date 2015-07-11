@@ -9,9 +9,9 @@
 #include "matrix.h"
 
 template <typename T>
-inline matrix<T> pdist2(const matrix<T> & A, const matrix<T> & B)
+inline Matrix<T> pdist2(const Matrix<T> & A, const Matrix<T> & B)
 {
-    matrix<T> ans(A.nR(), B.nR());
+    Matrix<T> ans(A.nR(), B.nR());
     for (int r = 0; r < A.nR(); r+=2) {
         for (int c = 0; c < B.nR(); c+=2) {
             ans(r, c) = A(r, 0) * A(r, 0) + B(c, 0) * B(c, 0);

@@ -13,23 +13,27 @@
 
 
 template <typename T>
-class matrix;
+class Matrix;
 
 template <typename T>
-class kronecker_matrix;
+class KroneckerMatrix;
 
 template <typename T>
-matrix<T> exp(const matrix<T> &);
+class KroneckerVectorStack;
+
+template <typename T>
+Matrix<T> exp(const Matrix<T> &);
 
 template<typename T>
-class matrix  {
-    friend kronecker_matrix<T>;
+class Matrix  {
+    friend KroneckerMatrix<T>;
+    friend KroneckerVectorStack<T>;
 public:
-    matrix() : data{}, nr{0}, nc{0}, r_stride{0}, r0{0}, c0{0}, trans{false} {};
-    matrix(std::vector<T> data_, long r_, long c_,
+    Matrix() : data{}, nr{0}, nc{0}, r_stride{0}, r0{0}, c0{0}, trans{false} {};
+    Matrix(std::vector<T> data_, long r_, long c_,
            long r_stride_, bool trans_) :
         data{data_}, nr{r_}, nc{c_}, r_stride{r_stride_}, trans{trans_} {};
-    matrix(long r_, long c_) : matrix()
+    Matrix(long r_, long c_) : Matrix()
     {
         set_size(r_, c_);
     };
@@ -80,6 +84,10 @@ private:
 
 public:
 
+    const T * begindata() const
+    {
+        return data.data();
+    }
     CBLAS_ORDER getOrder() const
     {
         return order;
@@ -116,9 +124,9 @@ public:
         return trace;
     }
 
-    matrix<T> transpose() const
+    Matrix<T> transpose() const
     {
-        return matrix(data, nr, nc, r_stride, !trans);
+        return Matrix(data, nr, nc, r_stride, !trans);
     }
 
     void mutable_transpose()
@@ -126,7 +134,7 @@ public:
         trans = !trans;
     }
 
-    matrix<T> reshape(long newr, long newc) const
+    Matrix<T> reshape(long newr, long newc) const
     {
         //TODO: return a 'view' if possible;
         assert(nR() * nC() == newr * newc);
@@ -136,7 +144,7 @@ public:
                 newdata.push_back((*this)(r, c));
             }
         }
-        return matrix(newdata, newr, newc, newc, false);
+        return Matrix(newdata, newr, newc, newc, false);
     }
 
     void mutable_reshape(long newr, long newc) {
@@ -164,7 +172,7 @@ public:
 
 
 
-    matrix<T> operator*(const matrix<T> &other) const
+    Matrix<T> operator*(const Matrix<T> &other) const
     {
         CBLAS_TRANSPOSE meTrans;
         CBLAS_TRANSPOSE otherTrans;
@@ -178,7 +186,7 @@ public:
 
         ldc = other.nC();
 
-        // check if this matrix is transposed:
+        // check if this Matrix is transposed:
         if (isTrans()) {
             meTrans = CblasTrans;
             lda = nR();
@@ -202,10 +210,10 @@ public:
                   dataptr(), lda, other.dataptr(), ldb,
                   0.0, new_data.data(), ldc);
 
-        return matrix(new_data, nR(), other.nC(), other.nC(), false);
+        return Matrix(new_data, nR(), other.nC(), other.nC(), false);
     }
 
-    matrix<T> Tdot(const matrix<T> &other)
+    Matrix<T> Tdot(const Matrix<T> &other)
     {
         mutable_transpose();
         auto ans = (*this) * other;
@@ -213,7 +221,12 @@ public:
         return ans;
     }
 
-    matrix<T> operator+(const matrix<T> &other) const
+    Matrix<T> operator*(const KroneckerVectorStack<T> kvs) {
+        assert(nR() == 1 && "Only works when matrix is a row vector!");
+        return vec_dot_kvs((*this), kvs);
+    }
+
+    Matrix<T> operator+(const Matrix<T> &other) const
     {
         assert(nR() == other.nR());
         assert(nC() == other.nC());
@@ -224,15 +237,15 @@ public:
                 new_data.push_back((*this)(r, c) + other(r, c));
             }
         }
-        return matrix(new_data, nR(), other.nC(), other.nC(), false);
+        return Matrix(new_data, nR(), other.nC(), other.nC(), false);
     }
 
-    matrix<T> operator-(const matrix<T> &other) const
+    Matrix<T> operator-(const Matrix<T> &other) const
     {
         return (*this) + (- other);
     }
 
-    matrix<T> hadamard(const matrix<T> &other) const
+    Matrix<T> hadamard(const Matrix<T> &other) const
     {
         assert(nR() == other.nR());
         assert(nC() == other.nC());
@@ -243,9 +256,9 @@ public:
                 new_data.push_back((*this)(r, c) * other(r, c));
             }
         }
-        return matrix(new_data, nR(), other.nC(), other.nC(), false);
+        return Matrix(new_data, nR(), other.nC(), other.nC(), false);
     }
-    matrix<T> elemwise_div(const matrix<T> &other) const
+    Matrix<T> elemwise_div(const Matrix<T> &other) const
     {
         assert(nR() == other.nR());
         assert(nC() == other.nC());
@@ -256,14 +269,14 @@ public:
                 new_data.push_back((*this)(r, c) / other(r, c));
             }
         }
-        return matrix(new_data, nR(), other.nC(), other.nC(), false);
+        return Matrix(new_data, nR(), other.nC(), other.nC(), false);
     }
 
-    // defined in kronecker matrix;
-    // matrix<T> matrix<T>::operator*(const kronecker_matrix<T> &other);
+    // defined in kronecker Matrix;
+    // Matrix<T> Matrix<T>::operator*(const KroneckerMatrix<T> &other);
 
 
-    void operator+=(const matrix<T> &other)
+    void operator+=(const Matrix<T> &other)
     {
         assert(nR() == other.nR());
         assert(nC() == other.nC());
@@ -291,39 +304,39 @@ public:
         (*this) *= 1.0 / val;
     }
 
-    matrix operator+(const T val) const
+    Matrix operator+(const T val) const
     {
-        matrix<T> ans = (*this);
+        Matrix<T> ans = (*this);
         ans += val;
         return ans;
     }
-    matrix operator-(const T val) const
+    Matrix operator-(const T val) const
     {
-        matrix<T> ans = (*this);
+        Matrix<T> ans = (*this);
         ans -= val;
         return ans;
     }
-    matrix operator*(const T val) const
+    Matrix operator*(const T val) const
     {
-        matrix<T> ans = (*this);
+        Matrix<T> ans = (*this);
         ans *= val;
         return ans;
     }
-    matrix operator/(const T val) const
+    Matrix operator/(const T val) const
     {
-        matrix<T> ans = (*this);
+        Matrix<T> ans = (*this);
         ans /= val;
         return ans;
     }
 
-    matrix<T> operator-() const
+    Matrix<T> operator-() const
     {
-        matrix<T> ans = (*this);
+        Matrix<T> ans = (*this);
         for (T & el : ans.data) el = -el;
         return ans;
     }
 
-    bool operator==(const matrix & other) const
+    bool operator==(const Matrix & other) const
     {
         assert(nR() == other.nR());
         assert(nC() == other.nC());
@@ -336,7 +349,7 @@ public:
         return match;
     }
 
-    bool operator!=(const matrix & other) const
+    bool operator!=(const Matrix & other) const
     {
         return !((*this) == other);
     }
@@ -351,7 +364,7 @@ public:
         for (T & el : (*data)) el = exp(el);
     }
 
-    matrix<T> solve(const matrix<T> & other)
+    Matrix<T> solve(const Matrix<T> & other)
     {
 
     }
@@ -359,7 +372,7 @@ public:
 private:
     struct literal_assign_helper {
 
-        explicit literal_assign_helper(matrix * m_): m(m_)
+        explicit literal_assign_helper(Matrix * m_): m(m_)
         {
             next();
         }
@@ -388,17 +401,17 @@ private:
                 done = true;
             }
         }
-        friend class matrix;
+        friend class Matrix;
         mutable bool done = false;
         mutable long r = 0;
         mutable long c = 0;
-        matrix * m;
+        Matrix * m;
 
     };
 
 public:
 
-    matrix& operator = (
+    Matrix& operator = (
         const literal_assign_helper& val
     )
     {
@@ -418,11 +431,11 @@ public:
 
     void apply_lambda();
 
-    friend matrix exp<T>(const matrix & m);
+    friend Matrix exp<T>(const Matrix & m);
 };
 template <typename T>
 std::ostream& operator<<(
-    std::ostream& out, matrix<T> M
+    std::ostream& out, Matrix<T> M
 )
 {
     for (long row = 0; row < M.nR(); ++row) {
@@ -435,15 +448,15 @@ std::ostream& operator<<(
 }
 
 template <typename T>
-matrix<T> exp(const matrix<T> & m)
+Matrix<T> exp(const Matrix<T> & m)
 {
-    matrix<T> ans = m;
+    Matrix<T> ans = m;
     for (T & el : (*ans.data)) el = exp(el);
     return ans;
 }
 
 template <typename T, typename N>
-matrix<T> operator*(N val, const matrix<T> & m)
+Matrix<T> operator*(N val, const Matrix<T> & m)
 {
     return m * val;
 }
@@ -456,8 +469,8 @@ private:
     std::vector<T> LU;
     std::vector<int> pivots;
 public:
-    matrix<T> inv() const;
-    matrix<T> solve(const matrix<T> & other) const;
+    Matrix<T> inv() const;
+    Matrix<T> solve(const Matrix<T> & other) const;
 };
 
-#endif //KRONMAT_MATRIX_H
+#endif //KRONMAT_Matrix_H

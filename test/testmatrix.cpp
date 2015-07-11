@@ -9,7 +9,7 @@
 
 TEST(Matrix, SetScalar)
 {
-    matrix<float> mat(2, 3);
+    Matrix<float> mat(2, 3);
     mat = 1, 2, 3, 4, 5, 6;
     mat = 1;
     for (int r = 0; r < 2; ++r) {
@@ -21,9 +21,9 @@ TEST(Matrix, SetScalar)
 
 TEST(Matrix, EqualsAssignment)
 {
-    matrix<float> mat(2, 3);
+    Matrix<float> mat(2, 3);
     mat = 1, 2, 3, 4, 5, 6;
-    matrix<float> mat2 = mat + 1;
+    Matrix<float> mat2 = mat + 1;
     for (int r = 0; r < 2; ++r) {
         for (int c = 0; c < 3; ++c) {
             if ((r == 0) && (c == 0)) {
@@ -45,24 +45,24 @@ TEST(Matrix, EqualsAssignment)
 
 TEST(Matrix, Equality)
 {
-    matrix<float> mat1(2, 3);
+    Matrix<float> mat1(2, 3);
     mat1 = 1, 2, 3, 4, 5, 6;
-    matrix<float> mat2(2, 3);
+    Matrix<float> mat2(2, 3);
     mat2 = 1, 2, 3, 4, 5, 6;
     ASSERT_TRUE(mat1 == mat2);
 }
 TEST(Matrix, Inequality)
 {
-    matrix<float> mat1(2, 3);
+    Matrix<float> mat1(2, 3);
     mat1 = 1, 2, 3, 4, 5, 6;
-    matrix<float> mat2(2, 3);
+    Matrix<float> mat2(2, 3);
     mat2 = 1, 2, 3, 4, 5, 7;
     ASSERT_FALSE(mat1 == mat2);
 }
 
 TEST(Matrix, TransposeIndexing)
 {
-    matrix<float> mat(20, 30);
+    Matrix<float> mat(20, 30);
     for (int r = 0; r < 20; ++r) {
         for (int c = 0; c < 30; ++c) {
             mat(r, c) = r + c;
@@ -78,7 +78,7 @@ TEST(Matrix, TransposeIndexing)
 
 TEST(Matrix, Negate)
 {
-    matrix<float> mat(2, 3);
+    Matrix<float> mat(2, 3);
     mat = 1, 2, 3, 4, 5, 6;
     auto mat2 = -mat;
     for (int r = 0; r < 2; ++r) {
@@ -90,9 +90,9 @@ TEST(Matrix, Negate)
 
 TEST(Matrix, ScalarAdd)
 {
-    matrix<float> mat(2, 3);
+    Matrix<float> mat(2, 3);
     mat = 1, 2, 3, 4, 5, 6;
-    matrix<float> mat2 = mat + 1;
+    Matrix<float> mat2 = mat + 1;
     for (int r = 0; r < 2; ++r) {
         for (int c = 0; c < 3; ++c) {
             EXPECT_EQ(mat(r, c) + 1, mat2(r, c));
@@ -102,9 +102,9 @@ TEST(Matrix, ScalarAdd)
 
 TEST(Matrix, ScalarMinus)
 {
-    matrix<float> mat(2, 3);
+    Matrix<float> mat(2, 3);
     mat = 1, 2, 3, 4, 5, 6;
-    matrix<float> mat2 = mat - 1;
+    Matrix<float> mat2 = mat - 1;
     for (int r = 0; r < 2; ++r) {
         for (int c = 0; c < 3; ++c) {
             EXPECT_EQ(mat(r, c) - 1, mat2(r, c));
@@ -114,9 +114,9 @@ TEST(Matrix, ScalarMinus)
 
 TEST(Matrix, MatrixAdd)
 {
-    matrix<float> mat1(2, 3);
+    Matrix<float> mat1(2, 3);
     mat1 = 1, 2, 3, 4, 5, 6;
-    matrix<float> mat2(2, 3);
+    Matrix<float> mat2(2, 3);
     mat2 = 0, 1, 2, 3, 4, 5;
 
     auto mat_sum = mat1 + mat2;
@@ -130,9 +130,9 @@ TEST(Matrix, MatrixAdd)
 
 TEST(Matrix, MatrixMinus)
 {
-    matrix<float> mat1(2, 3);
+    Matrix<float> mat1(2, 3);
     mat1 = 1, 2, 3, 4, 5, 6;
-    matrix<float> mat2(2, 3);
+    Matrix<float> mat2(2, 3);
     mat2 = 0, 1, 2, 3, 4, 5;
 
     auto mat_sum = mat1 - mat2;
@@ -146,9 +146,9 @@ TEST(Matrix, MatrixMinus)
 
 TEST(Matrix, ScalarMul)
 {
-    matrix<float> mat(2, 3);
+    Matrix<float> mat(2, 3);
     mat = 1, 2, 3, 4, 5, 6;
-    matrix<float> mat2 = mat * 2;
+    Matrix<float> mat2 = mat * 2;
     for (int r = 0; r < 2; ++r) {
         for (int c = 0; c < 3; ++c) {
             EXPECT_EQ(mat(r, c) * 2, mat2(r, c));
@@ -158,9 +158,9 @@ TEST(Matrix, ScalarMul)
 
 TEST(Matrix, ScalarDiv)
 {
-    matrix<float> mat(2, 3);
+    Matrix<float> mat(2, 3);
     mat = 1, 2, 3, 4, 5, 6;
-    matrix<float> mat2 = mat / 2;
+    Matrix<float> mat2 = mat / 2;
     for (int r = 0; r < 2; ++r) {
         for (int c = 0; c < 3; ++c) {
             EXPECT_EQ(mat(r, c) / 2, mat2(r, c));
@@ -172,9 +172,9 @@ TEST(Matrix, ScalarDiv)
 
 TEST(Matrix, Hadamard)
 {
-    matrix<float> mat1(2, 3);
+    Matrix<float> mat1(2, 3);
     mat1 = 1, 2, 3, 4, 5, 6;
-    matrix<float> mat2(2, 3);
+    Matrix<float> mat2(2, 3);
     mat2 = 0, 1, 2, 3, 4, 5;
     auto mat_hadam = mat1.hadamard(mat2);
     for (int r = 0; r < 2; ++r) {
@@ -186,15 +186,15 @@ TEST(Matrix, Hadamard)
 
 TEST(Matrix, SimpleProduct)
 {
-    matrix<float> mat1(2, 3);
+    Matrix<float> mat1(2, 3);
     mat1 = 1, 2, 3, 4, 5, 6;
-    matrix<float> mat2(3, 2);
+    Matrix<float> mat2(3, 2);
     mat2 = 0, 1, 2, 3, 4, 5;
 
-    matrix<float> mat_ans12(2, 2);
+    Matrix<float> mat_ans12(2, 2);
     mat_ans12 = 16, 22, 34, 49;
 
-    matrix<float> mat_ans21(3, 3);
+    Matrix<float> mat_ans21(3, 3);
     mat_ans21 = 4, 5, 6, 14, 19, 24, 24, 33, 42;
 
     auto mat_prod12 = mat1 * mat2;
@@ -206,11 +206,11 @@ TEST(Matrix, SimpleProduct)
 
 TEST(Matrix, ProductWithTrans)
 {
-    matrix<float> mat1(2, 3);
+    Matrix<float> mat1(2, 3);
     mat1 = 1, 2, 3, 4, 5, 6;
     auto mat2 = mat1.transpose();
 
-    matrix<float> mat_ans(2, 2);
+    Matrix<float> mat_ans(2, 2);
     mat_ans = 14, 32, 32, 77;
 
     auto mat_prod = mat1 * mat2;
@@ -220,7 +220,7 @@ TEST(Matrix, ProductWithTrans)
 
 TEST(Matrix, ModifyTrans)
 {
-    matrix<float> mat1(2, 2);
+    Matrix<float> mat1(2, 2);
     mat1 = 1, 2, 3, 4;
     auto mat2 = mat1.transpose();
 
@@ -231,14 +231,14 @@ TEST(Matrix, ModifyTrans)
 
 TEST(Matrix, ProductShape)
 {
-    matrix<float> mat1(2, 3);
+    Matrix<float> mat1(2, 3);
     mat1 = 1, 2, 3, 4, 5, 6;
 
-    matrix<float> mat2(3, 1);
+    Matrix<float> mat2(3, 1);
     mat2 = 1, 2, 3;
 
 
-    matrix<float> mat_ans(2, 1);
+    Matrix<float> mat_ans(2, 1);
     mat_ans = 14, 32;
 
     auto mat_prod = mat1 * mat2;
@@ -255,8 +255,8 @@ TEST(Matrix, BigProductSingle)
     int M = 100;
     int N = 100;
     int K = 100;
-    matrix<float> mat1(M, N);
-    matrix<float> mat2(N, K);
+    Matrix<float> mat1(M, N);
+    Matrix<float> mat2(N, K);
     for (int r = 0; r < M; ++r) {
         for (int c = 0; c < N; ++c) {
             mat1(r, c) = (r + c);
@@ -267,8 +267,8 @@ TEST(Matrix, BigProductSingle)
             mat2(r, c) = (r + c);
         }
     }
-    // Manual matrix mult
-    matrix<float> mat_ans(M, K);
+    // Manual Matrix mult
+    Matrix<float> mat_ans(M, K);
     mat_ans = 0;
     for (int r = 0; r < M; ++r) {
         for (int c = 0; c < K; ++c) {
@@ -291,8 +291,8 @@ TEST(Matrix, BigProductDouble)
     int M = 500;
     int N = 500;
     int K = 100;
-    matrix<double> mat1(M, N);
-    matrix<double> mat2(N, K);
+    Matrix<double> mat1(M, N);
+    Matrix<double> mat2(N, K);
     for (int r = 0; r < M; ++r) {
         for (int c = 0; c < N; ++c) {
             mat1(r, c) = (r + c);
@@ -303,8 +303,8 @@ TEST(Matrix, BigProductDouble)
             mat2(r, c) = (r + c);
         }
     }
-    // Manual matrix mult
-    matrix<double> mat_ans(M, K);
+    // Manual Matrix mult
+    Matrix<double> mat_ans(M, K);
     mat_ans = 0;
     for (int r = 0; r < M; ++r) {
         for (int c = 0; c < K; ++c) {
@@ -324,10 +324,10 @@ TEST(Matrix, BigProductDouble)
 
 TEST(Matrix, TdotProduct)
 {
-    matrix<float> mat1(2, 2);
+    Matrix<float> mat1(2, 2);
     mat1 = 1, 2, 3, 4;
 
-    matrix<float> mat2(2, 2);
+    Matrix<float> mat2(2, 2);
     mat2 = 1, 2, 3, 5;
 
 
@@ -340,10 +340,10 @@ TEST(Matrix, TdotProduct)
 
 TEST(Matrix, Reshape)
 {
-    matrix<float> mat1(2, 3);
+    Matrix<float> mat1(2, 3);
     mat1 = 1, 2, 3, 4, 5, 6;
 
-    matrix<float> mat2(3, 2);
+    Matrix<float> mat2(3, 2);
     mat2 = 1, 2, 3, 4, 5, 6;
 
     EXPECT_EQ(mat2.reshape(2, 3), mat1);
@@ -351,10 +351,10 @@ TEST(Matrix, Reshape)
 
 TEST(Matrix, TransposeReshape)
 {
-    matrix<float> mat(2, 3);
+    Matrix<float> mat(2, 3);
     mat = 1, 3, 4, 5, 7, 9;
 
-    matrix<float> ans(2, 3);
+    Matrix<float> ans(2, 3);
     ans = 1, 5, 3, 7, 4, 9;
 
     auto mat_trans = mat.transpose().reshape(2, 3);
@@ -364,10 +364,10 @@ TEST(Matrix, TransposeReshape)
 
 TEST(Matrix, ReshapeTranspose)
 {
-    matrix<float> mat(2, 3);
+    Matrix<float> mat(2, 3);
     mat = 1, 3, 4, 5, 7, 9;
 
-    matrix<float> ans(2, 3);
+    Matrix<float> ans(2, 3);
     ans = 1, 4, 7, 3, 5, 9;
 
     auto mat_trans = mat.reshape(3, 2).transpose();
@@ -377,10 +377,10 @@ TEST(Matrix, ReshapeTranspose)
 
 TEST(Matrix, TransposeReshapeTranspose)
 {
-    matrix<float> mat(2, 3);
+    Matrix<float> mat(2, 3);
     mat = 1, 3, 4, 5, 7, 9;
 
-    matrix<float> ans(3, 2);
+    Matrix<float> ans(3, 2);
     ans = 1, 7, 5, 4, 3, 9;
 
     auto mat_trans = mat.transpose().reshape(2, 3).transpose();
@@ -390,10 +390,10 @@ TEST(Matrix, TransposeReshapeTranspose)
 
 TEST(Matrix, ReshapeTransposeReshape)
 {
-    matrix<float> mat(2, 3);
+    Matrix<float> mat(2, 3);
     mat = 1, 3, 4, 5, 7, 9;
 
-    matrix<float> ans(2, 3);
+    Matrix<float> ans(2, 3);
     ans = 1, 5, 3, 7, 4, 9;
 
     auto mat_trans = mat.reshape(2, 3).transpose().reshape(2, 3);
@@ -403,7 +403,7 @@ TEST(Matrix, ReshapeTransposeReshape)
 
 TEST(Matrix, MutableTranspose)
 {
-    matrix<float> mat1(2, 3);
+    Matrix<float> mat1(2, 3);
     mat1 = 1, 2, 3, 4, 5, 6;
 
     auto mat2 = mat1.transpose();
@@ -414,7 +414,7 @@ TEST(Matrix, MutableTranspose)
 
 TEST(Matrix, MutableTransposeX2)
 {
-    matrix<float> mat1(2, 3);
+    Matrix<float> mat1(2, 3);
     mat1 = 1, 2, 3, 4, 5, 6;
 
     auto mat2 = mat1;
@@ -425,9 +425,9 @@ TEST(Matrix, MutableTransposeX2)
 }
 
 TEST(Matrix, MutableReshape) {
-    matrix<float> mat1(2, 3);
+    Matrix<float> mat1(2, 3);
     mat1 = 1, 2, 3, 4, 5, 6;
-    matrix<float> mat2(3, 2);
+    Matrix<float> mat2(3, 2);
     mat2 = 1, 2, 3, 4, 5, 6;
 
     mat1.mutable_reshape(3,2);
@@ -436,13 +436,13 @@ TEST(Matrix, MutableReshape) {
 }
 
 TEST(Matrix, MutableReshapeProduct) {
-    matrix<float> mat1(2, 3);
+    Matrix<float> mat1(2, 3);
     mat1 = 1, 2, 3, 4, 5, 6;
 
     auto mat2 = mat1;
     mat2.mutable_reshape(3,2);
 
-    matrix<float> mat3(3, 2);
+    Matrix<float> mat3(3, 2);
     mat3 = 1, 2, 3, 4, 5, 6;
 
     EXPECT_EQ(mat1 * mat2, mat1 * mat3);
@@ -452,7 +452,7 @@ TEST(Matrix, MutableReshapeProduct) {
 
 TEST(Matrix, Trace)
 {
-    matrix<float> mat(2, 2);
+    Matrix<float> mat(2, 2);
     mat = 1, 2, 3, 4;
     EXPECT_EQ(mat.trace(), 5);
 }

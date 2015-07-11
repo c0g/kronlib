@@ -31,7 +31,7 @@ class sqexp1d {
 private:
 
 public:
-    matrix operator()(const & sqexp_hyp, const matrix & X1, const matrix & X2)
+    Matrix operator()(const & sqexp_hyp, const Matrix & X1, const Matrix & X2)
     {
         auto sq_dist = pdist2(X1, X2);
     }

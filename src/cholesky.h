@@ -15,17 +15,17 @@ public:
     std::vector<T> L;
     long n;
 public:
-    Cholesky(const matrix<T> & mat) {
+    Cholesky(const Matrix<T> & mat) {
         assert(mat.nR() == mat.nC());
         n = mat.nR();
         L = mat.getConstData();
         order = mat.getOrder();
         potrf(mat.getOrder(), 'L', n, L.data(), n);
     }
-    matrix<T> inv() const { 
+    Matrix<T> inv() const { 
         std::vector<T> data = L;
         potri(CblasRowMajor, 'L', n, data.data(), n);
-        matrix<T> mat(std::move(data), n, n, n, false);
+        Matrix<T> mat(std::move(data), n, n, n, false);
 
         //Fill upper triangle
         for (int r = 1; r < n; ++r) {
@@ -35,12 +35,12 @@ public:
         }
         return mat;
     };
-    matrix<T> solve(const matrix<T> & other) const{
+    Matrix<T> solve(const Matrix<T> & other) const{
         std::vector<T> B(other.getConstData());
         int n = other.nR();
         int m = other.nC();
         potrs(order, 'L', n, m, L.data(), n, B.data(), m);
-        return matrix<T>(std::move(B), n, m, m, false);
+        return Matrix<T>(std::move(B), n, m, m, false);
     }
     T logdet() const {
         T ld = 0;
@@ -49,8 +49,8 @@ public:
         }
         return 2 * ld;
     }
-    matrix<T> cholmat() const {
-        return matrix<T>(L, n, n, n, false);
+    Matrix<T> cholmat() const {
+        return Matrix<T>(L, n, n, n, false);
     }
     long N() const {
         return n;
@@ -65,7 +65,7 @@ public:
 };
 
 template <typename T> 
-bool operator== (const matrix<T> & mat, const Cholesky<T> & chol) {
+bool operator== (const Matrix<T> & mat, const Cholesky<T> & chol) {
     assert(mat.nR() == mat.nC());
     assert(mat.nR() == chol.N());
     bool match = true;
@@ -78,7 +78,7 @@ bool operator== (const matrix<T> & mat, const Cholesky<T> & chol) {
 }
 
 template <typename T> 
-bool operator== (const Cholesky<T> & chol, const matrix<T> & mat) {
+bool operator== (const Cholesky<T> & chol, const Matrix<T> & mat) {
     return (mat == chol);
 }
 

@@ -13,43 +13,52 @@
 
 
 template <typename T>
-class kronecker_matrix  {
-    friend matrix<T>;
+class KroneckerVectorStack;
+
+template <typename T>
+class KroneckerMatrix  {
+    friend Matrix<T>;
+    friend KroneckerVectorStack<T>;
 
 public:
 
 
 private:
 public:
-    kronecker_matrix(const std::vector<matrix<T>> &sub_matrices) : sub_matrices(sub_matrices) { }
-    kronecker_matrix() {}
+    KroneckerMatrix(const std::vector<Matrix<T>> &sub_matrices) : sub_matrices(sub_matrices) { }
+    KroneckerMatrix() {}
 
 private:
-    std::vector<matrix<T>> sub_matrices;
-    T multiplier = 1;
-    T sign = 1;
-
+    std::vector<Matrix<T>> sub_matrices;
 public:
-    void push_matrix(const matrix<T> & mat)
+    void push_matrix(const Matrix<T> & mat)
     {
         sub_matrices.push_back(mat);
     }
 
-    kronecker_matrix<T> operator*(const kronecker_matrix<T> & other)
+    KroneckerMatrix<T> operator*(const KroneckerMatrix<T> & other)
     {
         auto newsub_matrices = kronmat_dot_kronmat(sub_matrices, other.sub_matrices);
-        return kronecker_matrix(newsub_matrices);
+        return KroneckerMatrix(std::move(newsub_matrices));
     }
 
-    matrix<T> operator*(const matrix<T> & other) {
-        // assert(other.nC() == 1 && "The full matrix can only be a column vector");
+    KroneckerVectorStack<T> operator*(const KroneckerVectorStack<T> & other)
+    {
+        auto newsub_matrices = kronmat_dot_kronmat(sub_matrices, other.sub_matrices);
+        return KroneckerVectorStack<T>(std::move(newsub_matrices));
+    }
+
+    Matrix<T> operator*(const Matrix<T> & other)
+    {
+        assert(other.nC() == 1 && "The full Matrix can only be a column vector");
         return kronmat_dot_fullvec(sub_matrices, other);
     }
-    matrix<T> Tdot(const matrix<T> & other) {
-        // assert(other.nC() == 1 && "The full matrix can only be a column vector");
-        for (matrix<T> & m : sub_matrices) m.mutable_transpose();
+    Matrix<T> Tdot(const Matrix<T> & other)
+    {
+        assert(other.nC() == 1 && "The full Matrix can only be a column vector");
+        for (Matrix<T> & m : sub_matrices) m.mutable_transpose();
         auto ans = kronmat_dot_fullvec((*this), other);
-        for (matrix<T> & m : sub_matrices) m.mutable_transpose();
+        for (Matrix<T> & m : sub_matrices) m.mutable_transpose();
     }
 
 
@@ -70,14 +79,24 @@ public:
         return cols;
     }
 
-    matrix<T> full()
+    Matrix<T> full()
     {
         return kron_full(sub_matrices);
     }
 
+    void mutable_transpose()
+    {
+        for (Matrix<T> & m : sub_matrices) m.mutable_transpose();
+    }
 
+    KroneckerMatrix transpose() const
+    {
+        KroneckerMatrix ans = (*this);
+        ans.mutable_transpose();
+        return ans;
+    }
 
-    bool operator==(const kronecker_matrix<T> & other) const
+    bool operator==(const KroneckerMatrix<T> & other) const
     {
         bool match = true;
         assert(sub_matrices.size() == other.sub_matrices.size());
@@ -90,32 +109,26 @@ public:
     {
         int matnum = 1;
         for (auto m : sub_matrices) {
-            out << "Submatrix: " << matnum++ << std::endl;
+            out << "SubMatrix: " << matnum++ << std::endl;
             out << m << std::endl;
         }
     }
 };
 template <typename T>
 std::ostream& operator<<(
-    std::ostream& out, kronecker_matrix<T> K
+    std::ostream& out, KroneckerMatrix<T> K
 )
 {
     K.print_submatrices(out);
     return out;
 }
 
-template <typename T, typename N>
-kronecker_matrix<T> operator*(N val, kronecker_matrix<T> m)
-{
-    return m * val;
-}
-
 
 
 // template <typename T>
-// matrix<T> matrix<T>::operator*(const kronecker_matrix<T> &other) {
+// Matrix<T> Matrix<T>::operator*(const KroneckerMatrix<T> &other) {
 
-// //     kronecker_matrix has the operator kron_mat * matrix
+// //     KroneckerMatrix has the operator kron_mat * Matrix
 // //     we can use that by noting:
 // //         a * b = (b' * a')'
 
