@@ -19,6 +19,58 @@ TEST(Matrix, SetScalar)
     }
 }
 
+TEST(Matrix, MinusInplace)
+{
+    Matrix<float> mat(2, 2);
+    mat = 1, 2, 3, 4;
+    
+    Matrix<float> mat_minus(2, 2);
+    mat_minus = -1, -2, -3, -4;
+
+    mat.minus_inplace();
+
+    EXPECT_EQ(mat, mat_minus);
+}
+
+TEST(Matrix, MinusNotInplace)
+{
+    Matrix<float> mat(2, 2);
+    mat = 1, 2, 3, 4;
+    
+    Matrix<float> mat_minus(2, 2);
+    mat_minus = -1, -2, -3, -4;
+
+    auto mat_minus2 = -mat;
+
+    EXPECT_EQ(mat_minus2, mat_minus);
+}
+
+TEST(Matrix, ExpInplace)
+{
+    Matrix<float> mat(2, 2);
+    mat = 1, 2, 3, 4;
+    
+    Matrix<float> mat_exp(2, 2);
+    mat_exp = std::exp(1), std::exp(2), std::exp(3), std::exp(4);
+
+    mat.exp_inplace();
+
+    EXPECT_EQ(mat, mat_exp);
+}
+
+TEST(Matrix, ExpNotInplace)
+{
+    Matrix<float> mat(2, 2);
+    mat = 1, 2, 3, 4;
+    
+    Matrix<float> mat_exp(2, 2);
+    mat_exp = std::exp(1), std::exp(2), std::exp(3), std::exp(4);
+
+    auto mat_exp2 = exp(mat);
+
+    EXPECT_EQ(mat_exp2, mat_exp);
+}
+
 TEST(Matrix, EqualsAssignment)
 {
     Matrix<float> mat(2, 3);

@@ -25,7 +25,7 @@ find_package(Boost COMPONENTS timer system REQUIRED)
 #    CPPFLAGS: -I/usr/local/opt/lapack/include
 
 # Compiler flags - if GNU add in openmp
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O0 -msse4.2")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3 -msse4.2")
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   # using Clang
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -65,3 +65,7 @@ add_test(chol_test chol_test)
 add_executable(kvs_test test/testkvs.cpp)
 target_link_libraries(kvs_test ${CBLAS_LIBRARIES} ${Boost_LIBRARIES} ${GTEST_LIBRARY}  ${LAPACKE_LIBRARY})
 add_test(kvs_test kvs_test)
+
+add_executable(sqexp_test test/testsqexp.cpp)
+target_link_libraries(sqexp_test ${CBLAS_LIBRARIES} ${Boost_LIBRARIES} ${GTEST_LIBRARY}  ${LAPACKE_LIBRARY})
+add_test(sqexp_test sqexp_test)

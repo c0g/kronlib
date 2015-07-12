@@ -166,8 +166,12 @@ TEST(KVS, TDotWithKron)
     KroneckerVectorStack<float> kvs;
     kvs.push_matrix(kvs1);
     kvs.push_matrix(kvs2);
+    auto slow_ans =  kron.full() * kvs.full().transpose();
+    kvs.mutable_transpose();
+    auto & kvsT = kvs;
+    auto ans = (kron * kvsT).full();
 
-    EXPECT_EQ(kron.full() * kvs.full().transpose(), (kron * kvs.transpose()).full());
+    EXPECT_EQ(slow_ans, ans);
 }
 
 int main(int argc, char **argv)

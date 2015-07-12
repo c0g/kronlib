@@ -12,6 +12,7 @@
 #include "util.h"
 
 
+
 template <typename T>
 class KroneckerVectorStack;
 
@@ -31,38 +32,48 @@ public:
 private:
     std::vector<Matrix<T>> sub_matrices;
 public:
+
+    bool isTrans() const {
+        //TODO: better way to keep transpose in sync!
+        return sub_matrices[0].isTrans();
+    }
     void push_matrix(const Matrix<T> & mat)
     {
         sub_matrices.push_back(mat);
     }
 
-    KroneckerMatrix<T> operator*(const KroneckerMatrix<T> & other)
+    KroneckerMatrix<T> operator*(const KroneckerMatrix<T> & other) const
     {
         auto newsub_matrices = kronmat_dot_kronmat(sub_matrices, other.sub_matrices);
-        return KroneckerMatrix(std::move(newsub_matrices));
+        return KroneckerMatrix(newsub_matrices);
     }
 
-    KroneckerVectorStack<T> operator*(const KroneckerVectorStack<T> & other)
+    KroneckerVectorStack<T> operator*(const KroneckerVectorStack<T> & other) const
     {
+        assert(other.isTrans()); // kronecker dimensions need to line up
         auto newsub_matrices = kronmat_dot_kronmat(sub_matrices, other.sub_matrices);
-        return KroneckerVectorStack<T>(std::move(newsub_matrices));
+        KroneckerVectorStack<T> ans(newsub_matrices);
+        ans.mutable_transpose();
+        return ans;
     }
 
-    Matrix<T> operator*(const Matrix<T> & other)
+    Matrix<T> operator*(const Matrix<T> & other) const
     {
         assert(other.nC() == 1 && "The full Matrix can only be a column vector");
         return kronmat_dot_fullvec(sub_matrices, other);
     }
-    Matrix<T> Tdot(const Matrix<T> & other)
+
+    Matrix<T> Tdot(const Matrix<T> & other) const
     {
         assert(other.nC() == 1 && "The full Matrix can only be a column vector");
         for (Matrix<T> & m : sub_matrices) m.mutable_transpose();
         auto ans = kronmat_dot_fullvec((*this), other);
         for (Matrix<T> & m : sub_matrices) m.mutable_transpose();
+        return ans;
     }
 
 
-    long nR()
+    long nR() const
     {
         long rows = 1;
         for (auto m : sub_matrices) {
@@ -70,7 +81,7 @@ public:
         }
         return rows;
     }
-    long nC()
+    long nC() const
     {
         long cols = 1;
         for (auto m : sub_matrices) {
@@ -79,9 +90,14 @@ public:
         return cols;
     }
 
-    Matrix<T> full()
+    Matrix<T> full() const 
     {
-        return kron_full(sub_matrices);
+        auto ans = kron_full(sub_matrices);
+        if (isTrans()) {
+            ans.mutable_transpose();
+        }
+        return ans;
+
     }
 
     void mutable_transpose()
@@ -105,7 +121,7 @@ public:
         }
         return match;
     }
-    void print_submatrices(std::ostream & out)
+    void print_submatrices(std::ostream & out) const
     {
         int matnum = 1;
         for (auto m : sub_matrices) {
@@ -115,9 +131,9 @@ public:
     }
 };
 template <typename T>
-std::ostream& operator<<(
+std::ostream& operator<< (
     std::ostream& out, KroneckerMatrix<T> K
-)
+) 
 {
     K.print_submatrices(out);
     return out;

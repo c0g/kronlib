@@ -111,6 +111,25 @@ TEST(KronMatrix, KronDotFullVec)
     EXPECT_EQ(kmat * dot_with, ans);
 }
 
+// TEST(KronMatrix, KronSolveFullVec)
+// {
+//     Matrix<float> mat1(2, 2);
+//     mat1 = 1, 2, 3, 4;
+//     Matrix<float> mat2(2, 2);
+//     mat2 = 3, 4, 5, 6;
+
+//     KroneckerMatrix<float> kmat;
+//     kmat.push_matrix(mat1);
+//     kmat.push_matrix(mat2);
+
+//     Matrix<float> dot_with(4,1);
+//     dot_with = 0, 1, 2, 3;
+
+//     Matrix<float> ans(4,1);
+//     ans = -4, 3.5, 3, -2.5;
+//     EXPECT_EQ(kmat.solve(dot_with), ans);
+// }
+
 
 int main(int argc, char **argv)
 {

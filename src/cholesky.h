@@ -23,24 +23,22 @@ public:
         potrf(mat.getOrder(), 'L', n, L.data(), n);
     }
     Matrix<T> inv() const { 
-        std::vector<T> data = L;
-        potri(CblasRowMajor, 'L', n, data.data(), n);
-        Matrix<T> mat(std::move(data), n, n, n, false);
-
+        Matrix<T> ans{L, n, n, n, false};
+        potri(CblasRowMajor, 'L', n, ans.data.data(), n);
         //Fill upper triangle
         for (int r = 1; r < n; ++r) {
             for (int c = 0; c < r; ++c) {
-                mat(c, r) = mat(r, c);
+                ans(c, r) = ans(r, c);
             }
         }
-        return mat;
+        return ans;
     };
     Matrix<T> solve(const Matrix<T> & other) const{
-        std::vector<T> B(other.getConstData());
+        Matrix<T> ans = other;
         int n = other.nR();
         int m = other.nC();
-        potrs(order, 'L', n, m, L.data(), n, B.data(), m);
-        return Matrix<T>(std::move(B), n, m, m, false);
+        potrs(order, 'L', n, m, L.data(), n, ans.data.data(), m);
+        return ans;
     }
     T logdet() const {
         T ld = 0;

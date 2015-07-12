@@ -9,7 +9,7 @@
 #include "matrix.h"
 #include <deque>
 #include "kronvecstack.h"
-
+#include "cholesky.h"
 
 template <typename T>
 std::vector<Matrix<T>> kronmat_dot_kronmat (
@@ -36,6 +36,25 @@ Matrix<T> kronmat_dot_fullvec ( const std::vector<Matrix<T>> & K, const Matrix<T
         long xSize = x.nR() * x.nC();
         x.mutable_reshape(thisC, xSize / thisC);
         Matrix<T> Zt = (K[n] * x);
+        Zt.mutable_transpose();
+        x = Zt.reshape(xSize, 1);
+    }
+    return x;
+}
+
+template <typename T>
+Matrix<T> kronmat_solve_fullvec ( const std::vector<Matrix<T>> & K, const Matrix<T> & V )
+{
+    assert(V.nC() == 1);
+    long nmats = K.size();
+    Matrix<T> x = V;
+
+    for (int n = 0; n < nmats; ++n) {
+        long thisC = K[n].nC();
+        long xSize = x.nR() * x.nC();
+        x.mutable_reshape(thisC, xSize / thisC);
+        Cholesky<float> Ln(K[n]);
+        Matrix<T> Zt = (Ln.solve(x));
         Zt.mutable_transpose();
         x = Zt.reshape(xSize, 1);
     }

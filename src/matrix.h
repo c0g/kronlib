@@ -22,12 +22,16 @@ template <typename T>
 class KroneckerVectorStack;
 
 template <typename T>
+class Cholesky;
+
+template <typename T>
 Matrix<T> exp(const Matrix<T> &);
 
 template<typename T>
 class Matrix  {
     friend KroneckerMatrix<T>;
     friend KroneckerVectorStack<T>;
+    friend Cholesky<T>;
 public:
     Matrix() : data{}, nr{0}, nc{0}, r_stride{0}, r0{0}, c0{0}, trans{false} {};
     Matrix(std::vector<T> data_, long r_, long c_,
@@ -96,7 +100,10 @@ public:
     {
         return data;
     }
-
+    std::vector<T> & getMutableData()
+    {
+        return data;
+    }
     long nR() const
     {
         long ans = trans ? nc : nr;
@@ -242,7 +249,10 @@ public:
 
     Matrix<T> operator-(const Matrix<T> &other) const
     {
-        return (*this) + (- other);
+        auto ans = other;
+        ans.minus_inplace();
+        ans += (*this);
+        return ans;
     }
 
     Matrix<T> hadamard(const Matrix<T> &other) const
@@ -332,7 +342,7 @@ public:
     Matrix<T> operator-() const
     {
         Matrix<T> ans = (*this);
-        for (T & el : ans.data) el = -el;
+        ans.minus_inplace();
         return ans;
     }
 
@@ -356,12 +366,12 @@ public:
 
     void minus_inplace()
     {
-        for (T & el : (*data)) el = -el;
+        for (T & el : data) el = -el;
     }
 
     void exp_inplace()
     {
-        for (T & el : (*data)) el = exp(el);
+        for (T & el : data) el = exp(el);
     }
 
     Matrix<T> solve(const Matrix<T> & other)
@@ -451,7 +461,7 @@ template <typename T>
 Matrix<T> exp(const Matrix<T> & m)
 {
     Matrix<T> ans = m;
-    for (T & el : (*ans.data)) el = exp(el);
+    ans.exp_inplace();
     return ans;
 }
 
