@@ -1,58 +1,72 @@
 #include <iostream>
-#include <vector>
-#include <random>
-#include <boost/timer/timer.hpp>
-#include <functional>
-#include <stdlib.h>
-#include <stdio.h>
-//#include "add_full_kron.h"
-#include "matrix.h"
-#include "kernel.h"
 
+#include <cstdlib>
+#include <ctime>
 
-#include "kronvecstack_dot_vec.h"
-#include "distances.h"
-#include "parameter.h"
-#include "kronecker_matrix.h"
-#include "cholesky.h"
+extern "C" {
+#include <cblas.h>
+}
 
 using ntype = double;
 
 
-//Matrix<ntype> make_mat()
-//{
-//    return Matrix<ntype>(3,3);
-//}
-
 int main() {
 
-    Matrix<float> x{10, 1};
-    x = 1,2,3,4,5,6,7,8,9,10;
+    int M = 2;
+    int N = 3;
+    int D = 4;
+    double * kvs1 = new double[M * N]{1};
+    double * kvs2 = new double[M * N]{1};
+    double * kvs3 = new double[M * N]{1};
+    double * kvs4 = new double[M * N]{1};
 
-    const float delta = 1e-5;
-//    const float invdelta = 1e4;
-    const float onepdelt = 1+delta;
-    sqexp_hyp<float> hyp{1, 1};
-    sqexp_hyp<float> hyp_ll{onepdelt, 1};
-    sqexp_hyp<float> hyp_ls{1, onepdelt};
+    double * vec = new double[N*N*N*N]{2};
 
-    sqexp1d<float> k;
+    long * shapes = new long[D]{M, M, M, M};
 
-    auto normal = k(hyp, x, x);
-    auto dll = k(hyp_ll, x, x);
-    auto dls = k(hyp_ls, x, x);
-
-    auto derivs = k.dhyp(hyp, x, x);
-    std::cout << (dll - normal) / delta << std::endl;
-    std::cout << derivs[0] << std::endl;
-
-    std::cout << (dls - normal) / delta << std::endl;
-    std::cout << derivs[1] << std::endl;
+    double ** kvs = new double*[D]{kvs1, kvs2, kvs3, kvs4};
 
 
 
+    double * test_ans = new double[N*N*N*N]{0};
+    for (int nidx = 0; nidx < N; ++ nidx)
+    {
+        for (int midx = 0; midx < M*M*M*M; ++ midx)
+        {
+            long idx0 = (midx / M*M*M) % 2;
+            long idx1 = (midx / M*M) % 2;
+            long idx2 = (midx / M) % 2;
+            long idx3 = (midx) % 2;
+            test_ans[midx] += vec[nidx] * kvs1[idx0 + M * nidx] * kvs2[idx1 + M * nidx] * kvs2[idx2 + M * nidx] * kvs3[idx3 + M * nidx];
+        }
+    }
 
 
-};
+    std::cout << std::endl;
+    for (int el = 0; el < 16; ++el)
+        std::cout << test_ans[el] << " ";
+    std::cout << std::endl;
+
+
+
+    //Now for the real deal
+    double * src = new double[N*N*N*N]{0};
+    double * dst = new double[N*N*N*N]{0};
+
+    double * ans = new double[N*N*N*N]{0};
+
+    std::cout << std::endl;
+    for (int el = 0; el < 16; ++el)
+        std::cout << ans[el] << " ";
+    std::cout << std::endl;
+
+    delete[] src;
+    delete[] dst;
+    delete[] kvs;
+    delete[] kvs1;
+    delete[] kvs2;
+    delete[] kvs3;
+    delete[] kvs4;
+}
 
 

@@ -33,10 +33,6 @@ private:
     std::vector<Matrix<T>> sub_matrices;
 public:
 
-    bool isTrans() const {
-        //TODO: better way to keep transpose in sync!
-        return sub_matrices[0].isTrans();
-    }
     void push_matrix(const Matrix<T> & mat)
     {
         sub_matrices.push_back(mat);
@@ -53,8 +49,7 @@ public:
         assert(other.isTrans()); // kronecker dimensions need to line up
         auto newsub_matrices = kronmat_dot_kronmat(sub_matrices, other.sub_matrices);
         KroneckerVectorStack<T> ans(newsub_matrices);
-        ans.mutable_transpose();
-        return ans;
+        return ans.transpose();
     }
 
     Matrix<T> operator*(const Matrix<T> & other) const
@@ -62,16 +57,6 @@ public:
         assert(other.nC() == 1 && "The full Matrix can only be a column vector");
         return kronmat_dot_fullvec(sub_matrices, other);
     }
-
-    Matrix<T> Tdot(const Matrix<T> & other) const
-    {
-        assert(other.nC() == 1 && "The full Matrix can only be a column vector");
-        for (Matrix<T> & m : sub_matrices) m.mutable_transpose();
-        auto ans = kronmat_dot_fullvec((*this), other);
-        for (Matrix<T> & m : sub_matrices) m.mutable_transpose();
-        return ans;
-    }
-
 
     long nR() const
     {
@@ -93,9 +78,6 @@ public:
     Matrix<T> full() const 
     {
         auto ans = kron_full(sub_matrices);
-        if (isTrans()) {
-            ans.mutable_transpose();
-        }
         return ans;
 
     }

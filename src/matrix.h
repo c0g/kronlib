@@ -33,24 +33,18 @@ class Matrix  {
     friend KroneckerVectorStack<T>;
     friend Cholesky<T>;
 public:
-    Matrix() : data{}, nr{0}, nc{0}, r_stride{0}, r0{0}, c0{0}, trans{false} {};
-    Matrix(std::vector<T> data_, long r_, long c_,
-           long r_stride_, bool trans_) :
-        data{data_}, nr{r_}, nc{c_}, r_stride{r_stride_}, trans{trans_} {};
+    Matrix() : data{}, nr{0}, nc{0}, r0{0}, c0{0} {};
+    Matrix(std::vector<T> data_, long r_, long c_) :
+        data{data_}, nr{r_}, nc{c_} {
+	};
     Matrix(long r_, long c_) : Matrix()
     {
         set_size(r_, c_);
     };
     void set_size(long r, long c)
     {
-        if (trans) {
-            nr = c;
-            nc = r;
-        } else {
-            nr = r;
-            nc = c;
-        }
-        r_stride = c;
+        nr = r;
+    	nc = c;
         data.resize(nr * nc, 0);
 
     }
@@ -59,18 +53,11 @@ private:
 
     long nr;
     long nc;
-    long r_stride;
     long r0 = 0;
     long c0 = 0;
-    CBLAS_ORDER order = CblasRowMajor;
-    bool trans;
     const long vecidx(long r, long c) const
     {
-        if (trans) {
-            return (c) * r_stride + (r);
-        } else {
-            return (r) * r_stride + (c);
-        }
+        return r + nr * c;
     }
     const long offset() const
     {
@@ -92,10 +79,6 @@ public:
     {
         return data.data();
     }
-    CBLAS_ORDER getOrder() const
-    {
-        return order;
-    }
     const std::vector<T> & getConstData() const
     {
         return data;
@@ -106,22 +89,14 @@ public:
     }
     long nR() const
     {
-        long ans = trans ? nc : nr;
-        return ans;
+        return nr;
     }
     long nC() const
     {
-        long ans = trans ? nr : nc;
-        return ans;
+        return nc;
     }
 
-    bool isTrans() const
-    {
-        return trans;
-    }
-
-
-    T trace()
+    T trace() const 
     {
         assert(nR() == nC());
         T trace = 0;
@@ -133,36 +108,26 @@ public:
 
     Matrix<T> transpose() const
     {
-        return Matrix(data, nr, nc, r_stride, !trans);
-    }
-
-    void mutable_transpose()
-    {
-        trans = !trans;
-    }
-
-    Matrix<T> reshape(long newr, long newc) const
-    {
-        //TODO: return a 'view' if possible;
-        assert(nR() * nC() == newr * newc);
         std::vector<T> newdata;
         for (int r = 0; r < nR(); ++r) {
             for (int c = 0; c < nC(); ++c) {
                 newdata.push_back((*this)(r, c));
             }
         }
-        return Matrix(newdata, newr, newc, newc, false);
+        return Matrix(newdata, nC(), nR());
     }
 
-    void mutable_reshape(long newr, long newc) {
+    Matrix<T> reshape(long newr, long newc) const
+    {
         assert(nR() * nC() == newr * newc);
-        assert(!trans);
-        nr = newr;
-        nc = newc;
-        r_stride = newc;
+        std::vector<T> newdata;
+        for (int c = 0; c < nC(); ++c) {
+            for (int r = 0; r < nR(); ++r) {
+                newdata.push_back((*this)(r, c));
+            }
+        }
+        return Matrix(newdata, newr, newc);
     }
-
-
 
     T& operator()(long ridx, long cidx)
     {
@@ -181,8 +146,8 @@ public:
 
     Matrix<T> operator*(const Matrix<T> &other) const
     {
-        CBLAS_TRANSPOSE meTrans;
-        CBLAS_TRANSPOSE otherTrans;
+        CBLAS_TRANSPOSE meTrans = CblasNoTrans;
+        CBLAS_TRANSPOSE otherTrans = CblasNoTrans;
         int M, N, K, lda, ldb, ldc;
 
         assert(nC() == other.nR());
@@ -191,35 +156,22 @@ public:
         N = other.nC(); //results matrices cols
         K = nC(); // this matrices columns == other matrices rows
 
-        ldc = other.nC();
-
-        // check if this Matrix is transposed:
-        if (isTrans()) {
-            meTrans = CblasTrans;
-            lda = nR();
-        } else {
-            meTrans = CblasNoTrans;
-            lda = nC();
-        }
-
-        if (other.isTrans()) {
-            otherTrans = CblasTrans;
-            ldb = other.nR();
-        } else {
-            otherTrans = CblasNoTrans;
-            ldb = other.nC();
-        }
+	lda = nR(); // size of leading dim of this matrix
+	ldb = other.nR(); // size of leading dim of other matrix
+        ldc = nR(); // size of leading dim of answer matrix
 
         std::vector<T> new_data;
         new_data.resize(nR() * other.nC());
 
-        blas_gemm(CblasRowMajor, meTrans, otherTrans, M, N, K, 1.0,
+
+        blas_gemm(CblasColMajor, meTrans, otherTrans, M, N, K, 1.0,
                   dataptr(), lda, other.dataptr(), ldb,
                   0.0, new_data.data(), ldc);
 
-        return Matrix(new_data, nR(), other.nC(), other.nC(), false);
+        return Matrix(new_data, nR(), other.nC());
     }
 
+    /* Removed until I can get clearer idea of how to make mutable transpose work
     Matrix<T> Tdot(const Matrix<T> &other)
     {
         mutable_transpose();
@@ -227,6 +179,7 @@ public:
         mutable_transpose();
         return ans;
     }
+    */
 
     Matrix<T> operator*(const KroneckerVectorStack<T> kvs) {
         assert(nR() == 1 && "Only works when matrix is a row vector!");
@@ -239,17 +192,17 @@ public:
         assert(nC() == other.nC());
 
         std::vector<T> new_data;
-        for (long r = 0; r < nR(); ++r) {
-            for (long c = 0; c < nC(); ++c) {
+        for (long c = 0; c < nC(); ++c) {
+            for (long r = 0; r < nR(); ++r) {
                 new_data.push_back((*this)(r, c) + other(r, c));
             }
         }
-        return Matrix(new_data, nR(), other.nC(), other.nC(), false);
+        return Matrix(new_data, nR(), other.nC());
     }
 
     Matrix<T> operator-(const Matrix<T> &other) const
     {
-        auto ans = other;
+        Matrix<T> ans = other;
         ans.minus_inplace();
         ans += (*this);
         return ans;
@@ -261,12 +214,12 @@ public:
         assert(nC() == other.nC());
 
         std::vector<T> new_data;
-        for (long r = 0; r < nR(); ++r) {
-            for (long c = 0; c < nC(); ++c) {
+        for (long c = 0; c < nC(); ++c) {
+            for (long r = 0; r < nR(); ++r) {
                 new_data.push_back((*this)(r, c) * other(r, c));
             }
         }
-        return Matrix(new_data, nR(), other.nC(), other.nC(), false);
+        return Matrix(new_data, nR(), other.nC());
     }
     Matrix<T> elemwise_div(const Matrix<T> &other) const
     {
@@ -274,12 +227,12 @@ public:
         assert(nC() == other.nC());
 
         std::vector<T> new_data;
-        for (long r = 0; r < nR(); ++r) {
-            for (long c = 0; c < nC(); ++c) {
+        for (long c = 0; c < nC(); ++c) {
+            for (long r = 0; r < nR(); ++r) {
                 new_data.push_back((*this)(r, c) / other(r, c));
             }
         }
-        return Matrix(new_data, nR(), other.nC(), other.nC(), false);
+        return Matrix(new_data, nR(), other.nC());
     }
 
     // defined in kronecker Matrix;
@@ -290,8 +243,8 @@ public:
     {
         assert(nR() == other.nR());
         assert(nC() == other.nC());
-        for (long r = 0; r < nR(); ++r) {
-            for (long c = 0; c < nC(); ++c) {
+        for (long c = 0; c < nC(); ++c) {
+            for (long r = 0; r < nR(); ++r) {
                 (*this)(r, c) += other(r, c);
             }
         }
@@ -351,8 +304,8 @@ public:
         assert(nR() == other.nR());
         assert(nC() == other.nC());
         bool match = true;
-        for (int r = 0; r < nR(); ++r) {
-            for (int c = 0; c < nC(); ++c) {
+        for (long c = 0; c < nC(); ++c) {
+            for (long r = 0; r < nR(); ++r) {
                 match &= (*this)(r, c) == other(r, c);
             }
         }

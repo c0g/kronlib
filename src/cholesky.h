@@ -11,7 +11,6 @@
 template <typename T>
 class Cholesky {
 public:
-    CBLAS_ORDER order = CblasRowMajor;
     std::vector<T> L;
     long n;
 public:
@@ -19,12 +18,11 @@ public:
         assert(mat.nR() == mat.nC());
         n = mat.nR();
         L = mat.getConstData();
-        order = mat.getOrder();
-        potrf(mat.getOrder(), 'L', n, L.data(), n);
+        potrf(CblasColMajor, 'L', n, L.data(), n);
     }
     Matrix<T> inv() const { 
-        Matrix<T> ans{L, n, n, n, false};
-        potri(CblasRowMajor, 'L', n, ans.data.data(), n);
+        Matrix<T> ans{L, n, n};
+        potri(CblasColMajor, 'L', n, ans.data.data(), n);
         //Fill upper triangle
         for (int r = 1; r < n; ++r) {
             for (int c = 0; c < r; ++c) {
@@ -37,7 +35,7 @@ public:
         Matrix<T> ans = other;
         int n = other.nR();
         int m = other.nC();
-        potrs(order, 'L', n, m, L.data(), n, ans.data.data(), m);
+        potrs(CblasColMajor, 'L', n, m, L.data(), n, ans.data.data(), n);
         return ans;
     }
     T logdet() const {
@@ -48,17 +46,17 @@ public:
         return 2 * ld;
     }
     Matrix<T> cholmat() const {
-        return Matrix<T>(L, n, n, n, false);
+	    std::vector<T> newdata;
+	    newdata.resize(n * n, 0.0);
+	    for (int c = 0; c < n; ++c) {
+		    for (int r = c; r < n ; ++r) {
+			    newdata[c * n + r] = L[c * n + r];
+		    }
+	    }
+	    return Matrix<T>(newdata, n, n);
     }
     long N() const {
         return n;
-    }
-    T operator()(long r, long c) const {
-        if (c > r) {
-            return 0;
-        } else {
-            return L[r * n + c];
-        }
     }
 };
 
@@ -66,13 +64,7 @@ template <typename T>
 bool operator== (const Matrix<T> & mat, const Cholesky<T> & chol) {
     assert(mat.nR() == mat.nC());
     assert(mat.nR() == chol.N());
-    bool match = true;
-    for (int r = 0; r < chol.N(); ++r){
-        for (int c = 0; c <= r; ++c) {
-            match &= (mat(r, c) == chol(r, c));
-        }
-    }
-    return match;
+    return chol.cholmat() == mat;
 }
 
 template <typename T> 

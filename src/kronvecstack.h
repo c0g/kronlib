@@ -7,6 +7,7 @@
 
 #include "matrix.h"
 #include "kronecker_matrix.h"
+#include <functional>
 
 template <typename T>
 class KroneckerVectorStack {
@@ -19,10 +20,6 @@ public:
     std::vector<Matrix<T>> sub_matrices;
 
 public:
-    bool isTrans() const {
-        //TODO: better way to keep transpose in sync!
-        return sub_matrices[0].isTrans();
-    }
     void push_matrix(const Matrix<T> & mat)
     {
         sub_matrices.push_back(mat);
@@ -36,21 +33,16 @@ public:
 
     Matrix<T> full() const {
         auto ans = kvs_full(sub_matrices);
-        if (isTrans()) {
-            ans.mutable_transpose();
-        }
         return ans;
-    }
-
-    void mutable_transpose()
-    {
-        for (Matrix<T> & m : sub_matrices) m.mutable_transpose();
     }
 
     KroneckerVectorStack transpose() const
     {
-        KroneckerVectorStack ans = (*this);
-        ans.mutable_transpose();
+	auto trans = [&](const Matrix<T> & m){ return m.transpose();};
+	std::vector<Matrix<T>> newsub;
+	newsub.resize(sub_matrices.size());
+	std::transform(sub_matrices.begin(), sub_matrices.end(), newsub.begin(), trans);
+	KroneckerVectorStack ans{newsub};
         return ans;
     }
 

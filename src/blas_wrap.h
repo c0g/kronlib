@@ -6,8 +6,8 @@
 
 
 extern "C" {
-#include <cblas.h>
 };
+#include <cblas.h>
 #include <lapacke.h>
 
 
