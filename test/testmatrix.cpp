@@ -19,6 +19,19 @@ TEST(Matrix, SetScalar)
     }
 }
 
+TEST(Matrix, SetSeq)
+{
+    Matrix<float> mat(2, 3);
+    mat = 1, 2, 3, 4, 5, 6;
+    int ans = 1;
+    for (int r = 0; r < 2; ++r) {
+        for (int c = 0; c < 3; ++c) {
+            EXPECT_EQ(mat(r, c), ans);
+            ++ans;
+        }
+    }
+}
+
 TEST(Matrix, MinusInplace)
 {
     Matrix<float> mat(2, 2);
@@ -374,29 +387,17 @@ TEST(Matrix, BigProductDouble)
 
 }
 
-TEST(Matrix, TdotProduct)
-{
-    Matrix<float> mat1(2, 2);
-    mat1 = 1, 2, 3, 4;
-
-    Matrix<float> mat2(2, 2);
-    mat2 = 1, 2, 3, 5;
-
-
-    auto mat_ans = mat1.transpose() * mat2;
-    auto mat_prod = mat1.Tdot(mat2);
-
-    EXPECT_EQ(mat_prod, mat_ans);
-
-}
 
 TEST(Matrix, Reshape)
 {
     Matrix<float> mat1(2, 3);
-    mat1 = 1, 2, 3, 4, 5, 6;
+    mat1 = 1, 2, 3, 
+           4, 5, 6;
 
     Matrix<float> mat2(3, 2);
-    mat2 = 1, 2, 3, 4, 5, 6;
+    mat2 = 1, 5,
+           4, 3,
+           2, 6;
 
     EXPECT_EQ(mat2.reshape(2, 3), mat1);
 }
@@ -407,11 +408,12 @@ TEST(Matrix, TransposeReshape)
     mat = 1, 3, 4, 5, 7, 9;
 
     Matrix<float> ans(2, 3);
-    ans = 1, 5, 3, 7, 4, 9;
+    ans = 1, 4, 7, 3, 5, 9;
 
-    auto mat_trans = mat.transpose().reshape(2, 3);
+    auto mat_trans = mat.transpose();
+    auto mat_res = mat_trans.reshape(2, 3);
 
-    EXPECT_EQ(ans, mat_trans);
+    EXPECT_EQ(ans, mat_res);
 }
 
 TEST(Matrix, ReshapeTranspose)
@@ -420,7 +422,7 @@ TEST(Matrix, ReshapeTranspose)
     mat = 1, 3, 4, 5, 7, 9;
 
     Matrix<float> ans(2, 3);
-    ans = 1, 4, 7, 3, 5, 9;
+    ans = 1, 5, 3, 7, 4, 9;
 
     auto mat_trans = mat.reshape(3, 2).transpose();
 
@@ -433,7 +435,7 @@ TEST(Matrix, TransposeReshapeTranspose)
     mat = 1, 3, 4, 5, 7, 9;
 
     Matrix<float> ans(3, 2);
-    ans = 1, 7, 5, 4, 3, 9;
+    ans = 1, 3, 4, 5, 7, 9;
 
     auto mat_trans = mat.transpose().reshape(2, 3).transpose();
 
@@ -446,61 +448,12 @@ TEST(Matrix, ReshapeTransposeReshape)
     mat = 1, 3, 4, 5, 7, 9;
 
     Matrix<float> ans(2, 3);
-    ans = 1, 5, 3, 7, 4, 9;
+    ans = 1, 4, 7, 3, 5 ,9;
 
     auto mat_trans = mat.reshape(2, 3).transpose().reshape(2, 3);
 
     EXPECT_EQ(ans, mat_trans);
 }
-
-TEST(Matrix, MutableTranspose)
-{
-    Matrix<float> mat1(2, 3);
-    mat1 = 1, 2, 3, 4, 5, 6;
-
-    auto mat2 = mat1.transpose();
-    mat1.mutable_transpose();
-
-    EXPECT_EQ(mat2, mat1);
-}
-
-TEST(Matrix, MutableTransposeX2)
-{
-    Matrix<float> mat1(2, 3);
-    mat1 = 1, 2, 3, 4, 5, 6;
-
-    auto mat2 = mat1;
-    mat1.mutable_transpose();
-    mat1.mutable_transpose();
-
-    EXPECT_EQ(mat2, mat1);
-}
-
-TEST(Matrix, MutableReshape) {
-    Matrix<float> mat1(2, 3);
-    mat1 = 1, 2, 3, 4, 5, 6;
-    Matrix<float> mat2(3, 2);
-    mat2 = 1, 2, 3, 4, 5, 6;
-
-    mat1.mutable_reshape(3,2);
-
-    EXPECT_EQ(mat2, mat1);
-}
-
-TEST(Matrix, MutableReshapeProduct) {
-    Matrix<float> mat1(2, 3);
-    mat1 = 1, 2, 3, 4, 5, 6;
-
-    auto mat2 = mat1;
-    mat2.mutable_reshape(3,2);
-
-    Matrix<float> mat3(3, 2);
-    mat3 = 1, 2, 3, 4, 5, 6;
-
-    EXPECT_EQ(mat1 * mat2, mat1 * mat3);
-}
-
-
 
 TEST(Matrix, Trace)
 {

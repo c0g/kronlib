@@ -147,33 +147,6 @@ TEST(KVS, LDotWithKron)
 }
 
 
-TEST(KVS, TDotWithKron)
-{
-    Matrix<float> kron1(2,2);
-    kron1 = 1,2,3,4;
-    Matrix<float> kron2(2,2);
-    kron2 = 2,3,4,5;
-
-    KroneckerMatrix<float> kron;
-    kron.push_matrix(kron1);
-    kron.push_matrix(kron2);
-
-    Matrix<float> kvs1(2,2);
-    kvs1 = 1,2,3,4;
-    Matrix<float> kvs2(2,2);
-    kvs2 = 1,2,3,4;
-
-    KroneckerVectorStack<float> kvs;
-    kvs.push_matrix(kvs1);
-    kvs.push_matrix(kvs2);
-    auto slow_ans =  kron.full() * kvs.full().transpose();
-    kvs.mutable_transpose();
-    auto & kvsT = kvs;
-    auto ans = (kron * kvsT).full();
-
-    EXPECT_EQ(slow_ans, ans);
-}
-
 int main(int argc, char **argv)
 {
     std::cout << "Running test" << std::endl;
