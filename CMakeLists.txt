@@ -56,13 +56,14 @@ target_link_libraries(KronMat ${CBLAS_LIBRARIES} ${GTEST_BOTH_LIBRARIES}  ${CUDA
 enable_testing()
 
 if(CUDA_FOUND)
-	CUDA_ADD_EXECUTABLE(matrix_test test/testmatrix.cpp)
-	CUDA_ADD_CUBLAS_TO_TARGET(matrix_test)
-else()
-	add_executable(matrix_test test/testmatrix.cpp)
+	CUDA_ADD_EXECUTABLE(matrix_test_cuda test/testmatrix.cu)
+	CUDA_ADD_CUBLAS_TO_TARGET(matrix_test_cuda)
+	target_link_libraries(matrix_test_cuda ${CBLAS_LIBRARIES}  ${GTEST_LIBRARY}  ${LAPACKE_LIBRARIES})
+	add_test(matrix_test_cuda matrix_test_cuda)
 endif()
-target_link_libraries(matrix_test ${CBLAS_LIBRARIES}  ${GTEST_LIBRARY}  ${LAPACKE_LIBRARIES})
-add_test(matrix_test matrix_test)
+#add_executable(matrix_test test/testmatrix.cpp)
+#target_link_libraries(matrix_test ${CBLAS_LIBRARIES}  ${GTEST_LIBRARY}  ${LAPACKE_LIBRARIES})
+#add_test(matrix_test matrix_test)
 
 if(FALSE) # fake multiline comment
 if(CUDA_FOUND)

@@ -1,4 +1,4 @@
-//
+
 // Created by Thomas Nickson on 12/06/15.
 //
 
@@ -10,31 +10,41 @@
 #include <assert.h>
 #include "blas_wrap.h"
 #include <cmath>
+#include <thrust/device_vector.h>
+#include <thrust/host_vector.h>
+#include <thrust/fill.h>
 
-
-template <typename T>
+/*
+template<typename Storage, typename T>
 class Matrix;
 
-template <typename T>
+template<typename Storage, typename T>
 class KroneckerMatrix;
 
-template <typename T>
+template<typename Storage, typename T>
 class KroneckerVectorStack;
 
-template <typename T>
+template<typename Storage, typename T>
 class Cholesky;
 
+template<typename Storage, typename T>
+Matrix<Storage, T> exp(const Matrix<T, Storage> &);
+*/
 template <typename T>
-Matrix<T> exp(const Matrix<T> &);
+using device = thrust::device_vector<T>;
 
-template<typename T>
+template <typename T>
+using host = thrust::host_vector<T>;
+
+template<typename Storage>
 class Matrix  {
-    friend KroneckerMatrix<T>;
-    friend KroneckerVectorStack<T>;
-    friend Cholesky<T>;
+	using T = typename Storage::value_type;
+    //friend KroneckerMatrix<Storage, T>;
+    //friend KroneckerVectorStack<Storage, T>;
+    //friend Cholesky<Storage, T>;
 public:
     Matrix() : data{}, nr{0}, nc{0}, r0{0}, c0{0} {};
-    Matrix(std::vector<T> data_, long r_, long c_) :
+    Matrix(Storage data_, long r_, long c_) :
         data{data_}, nr{r_}, nc{c_} {
 	};
     Matrix(long r_, long c_) : Matrix()
@@ -49,17 +59,17 @@ public:
 
     }
 private:
-    std::vector<T> data;
 
+    Storage data;
     long nr;
     long nc;
     long r0 = 0;
     long c0 = 0;
-    const long vecidx(long r, long c) const
+    long vecidx(long r, long c) const
     {
         return r + nr * c;
     }
-    const long offset() const
+    long offset() const
     {
         return 0;
     }
@@ -79,11 +89,11 @@ public:
     {
         return data.data();
     }
-    const std::vector<T> & getConstData() const
+    const Storage & getConstData() const
     {
         return data;
     }
-    std::vector<T> & getMutableData()
+    Storage & getMutableData()
     {
         return data;
     }
@@ -96,6 +106,10 @@ public:
         return nc;
     }
 
+    void operator=(const T& val) {
+        thrust::fill(data.begin(), data.end(), val);
+    }
+
     T trace() const 
     {
         assert(nR() == nC());
@@ -106,9 +120,9 @@ public:
         return trace;
     }
 
-    Matrix<T> transpose() const
+    Matrix<Storage> transpose() const
     {
-        std::vector<T> newdata;
+        Storage newdata;
         for (int r = 0; r < nR(); ++r) {
             for (int c = 0; c < nC(); ++c) {
                 newdata.push_back((*this)(r, c));
@@ -117,10 +131,10 @@ public:
         return Matrix(newdata, nC(), nR());
     }
 
-    Matrix<T> reshape(long newr, long newc) const
+    Matrix<Storage> reshape(long newr, long newc) const
     {
         assert(nR() * nC() == newr * newc);
-        std::vector<T> newdata;
+        Storage newdata;
         for (int c = 0; c < nC(); ++c) {
             for (int r = 0; r < nR(); ++r) {
                 newdata.push_back((*this)(r, c));
@@ -129,12 +143,6 @@ public:
         return Matrix(newdata, newr, newc);
     }
 
-    T& operator()(long ridx, long cidx)
-    {
-        assert(ridx < nR());
-        assert(cidx < nC());
-        return data[vecidx(ridx, cidx)];
-    }
     T operator()(long ridx, long cidx) const
     {
         assert(ridx < nR());
@@ -144,7 +152,7 @@ public:
 
 
 
-    Matrix<T> operator*(const Matrix<T> &other) const
+    Matrix<Storage> operator*(const Matrix<Storage> &other) const
     {
         CBLAS_TRANSPOSE meTrans = CblasNoTrans;
         CBLAS_TRANSPOSE otherTrans = CblasNoTrans;
@@ -156,11 +164,11 @@ public:
         N = other.nC(); //results matrices cols
         K = nC(); // this matrices columns == other matrices rows
 
-	lda = nR(); // size of leading dim of this matrix
-	ldb = other.nR(); // size of leading dim of other matrix
+        lda = nR(); // size of leading dim of this matrix
+        ldb = other.nR(); // size of leading dim of other matrix
         ldc = nR(); // size of leading dim of answer matrix
 
-        std::vector<T> new_data;
+        Storage new_data;
         new_data.resize(nR() * other.nC());
 
 
@@ -172,7 +180,7 @@ public:
     }
 
     /* Removed until I can get clearer idea of how to make mutable transpose work
-    Matrix<T> Tdot(const Matrix<T> &other)
+    Matrix<Storage> Tdot(const Matrix<Storage> &other)
     {
         mutable_transpose();
         auto ans = (*this) * other;
@@ -180,18 +188,18 @@ public:
         return ans;
     }
     */
-
-    Matrix<T> operator*(const KroneckerVectorStack<T> kvs) {
+/*
+    Matrix<Storage> operator*(const KroneckerVectorStack<T> kvs) {
         assert(nR() == 1 && "Only works when matrix is a row vector!");
         return vec_dot_kvs((*this), kvs);
     }
-
-    Matrix<T> operator+(const Matrix<T> &other) const
+*/
+    Matrix operator+(const Matrix<Storage> &other) const
     {
         assert(nR() == other.nR());
         assert(nC() == other.nC());
 
-        std::vector<T> new_data;
+        Storage new_data;
         for (long c = 0; c < nC(); ++c) {
             for (long r = 0; r < nR(); ++r) {
                 new_data.push_back((*this)(r, c) + other(r, c));
@@ -200,20 +208,20 @@ public:
         return Matrix(new_data, nR(), other.nC());
     }
 
-    Matrix<T> operator-(const Matrix<T> &other) const
+    Matrix operator-(const Matrix<Storage> &other) const
     {
-        Matrix<T> ans = other;
+        Matrix<Storage> ans = other;
         ans.minus_inplace();
         ans += (*this);
         return ans;
     }
 
-    Matrix<T> hadamard(const Matrix<T> &other) const
+    Matrix hadamard(const Matrix<Storage> &other) const
     {
         assert(nR() == other.nR());
         assert(nC() == other.nC());
 
-        std::vector<T> new_data;
+        Storage new_data;
         for (long c = 0; c < nC(); ++c) {
             for (long r = 0; r < nR(); ++r) {
                 new_data.push_back((*this)(r, c) * other(r, c));
@@ -221,12 +229,12 @@ public:
         }
         return Matrix(new_data, nR(), other.nC());
     }
-    Matrix<T> elemwise_div(const Matrix<T> &other) const
+    Matrix elemwise_div(const Matrix<Storage> &other) const
     {
         assert(nR() == other.nR());
         assert(nC() == other.nC());
 
-        std::vector<T> new_data;
+        Storage new_data;
         for (long c = 0; c < nC(); ++c) {
             for (long r = 0; r < nR(); ++r) {
                 new_data.push_back((*this)(r, c) / other(r, c));
@@ -236,10 +244,10 @@ public:
     }
 
     // defined in kronecker Matrix;
-    // Matrix<T> Matrix<T>::operator*(const KroneckerMatrix<T> &other);
+    // Matrix<Storage> Matrix<Storage>::operator*(const KroneckerMatrix<Storage> &other);
 
 
-    void operator+=(const Matrix<T> &other)
+    void operator+=(const Matrix<Storage> &other)
     {
         assert(nR() == other.nR());
         assert(nC() == other.nC());
@@ -269,32 +277,32 @@ public:
 
     Matrix operator+(const T val) const
     {
-        Matrix<T> ans = (*this);
+        Matrix<Storage> ans = (*this);
         ans += val;
         return ans;
     }
     Matrix operator-(const T val) const
     {
-        Matrix<T> ans = (*this);
+        Matrix<Storage> ans = (*this);
         ans -= val;
         return ans;
     }
     Matrix operator*(const T val) const
     {
-        Matrix<T> ans = (*this);
+        Matrix<Storage> ans = (*this);
         ans *= val;
         return ans;
     }
     Matrix operator/(const T val) const
     {
-        Matrix<T> ans = (*this);
+        Matrix<Storage> ans = (*this);
         ans /= val;
         return ans;
     }
 
-    Matrix<T> operator-() const
+    Matrix operator-() const
     {
-        Matrix<T> ans = (*this);
+        Matrix<Storage> ans = (*this);
         ans.minus_inplace();
         return ans;
     }
@@ -327,78 +335,18 @@ public:
         for (T & el : data) el = exp(el);
     }
 
-    Matrix<T> solve(const Matrix<T> & other)
+    Matrix<Storage> solve(const Matrix<Storage> & other)
     {
-
-    }
-
-private:
-    struct literal_assign_helper {
-
-        explicit literal_assign_helper(Matrix * m_): m(m_)
-        {
-            next();
-        }
-        ~literal_assign_helper()
-        {
-        }
-
-        const literal_assign_helper& operator, (
-            const T& val
-        ) const
-        {
-            (*m)(r, c) = val;
-            next();
-            return *this;
-        }
-
-    private:
-        void next() const
-        {
-            ++c;
-            if (c == m->nC()) {
-                c = 0;
-                ++r;
-            }
-            if (r == m->nR() && c == m->nC()) {
-                done = true;
-            }
-        }
-        friend class Matrix;
-        mutable bool done = false;
-        mutable long r = 0;
-        mutable long c = 0;
-        Matrix * m;
-
-    };
-
-public:
-
-    Matrix& operator = (
-        const literal_assign_helper& val
-    )
-    {
-        *this = *val.m;
         return *this;
     }
-
-    const literal_assign_helper operator = (
-        const T& val
-    )
-    {
-        for (T& vec_val : data) {
-            vec_val = val;
-        }
-        return literal_assign_helper(this);
-    }
-
     void apply_lambda();
 
-    friend Matrix exp<T>(const Matrix & m);
+    //friend Matrix exp<Storage>(const Matrix & m);
 };
-template <typename T>
+
+template <typename Storage>
 std::ostream& operator<<(
-    std::ostream& out, Matrix<T> M
+    std::ostream& out, Matrix<Storage> M
 )
 {
     for (long row = 0; row < M.nR(); ++row) {
@@ -410,30 +358,18 @@ std::ostream& operator<<(
     return out;
 }
 
-template <typename T>
-Matrix<T> exp(const Matrix<T> & m)
+template <typename Storage>
+Matrix<Storage> exp(const Matrix<Storage> & m)
 {
-    Matrix<T> ans = m;
+    Matrix<Storage> ans = m;
     ans.exp_inplace();
     return ans;
 }
 
-template <typename T, typename N>
-Matrix<T> operator*(N val, const Matrix<T> & m)
+template <typename Storage, typename N>
+Matrix<Storage> operator*(N val, const Matrix<Storage> & m)
 {
     return m * val;
 }
-
-
-
-template <typename T>
-class LU {
-private:
-    std::vector<T> LU;
-    std::vector<int> pivots;
-public:
-    Matrix<T> inv() const;
-    Matrix<T> solve(const Matrix<T> & other) const;
-};
 
 #endif //KRONMAT_Matrix_H

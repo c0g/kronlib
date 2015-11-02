@@ -6,12 +6,11 @@
 #include "matrix.h"
 #include "iostream"
 #include "gtest/gtest.h"
-
 TEST(Matrix, SetScalar)
 {
-    Matrix<host<float>> mat(2, 3);
-    mat = 1, 2, 3, 4, 5, 6;
+    Matrix<device<float>> mat(2, 3);
     mat = 1;
+
     for (int r = 0; r < 2; ++r) {
         for (int c = 0; c < 3; ++c) {
             EXPECT_EQ(mat(r, c), 1);
