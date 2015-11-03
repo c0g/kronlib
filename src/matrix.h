@@ -341,7 +341,65 @@ public:
     }
     void apply_lambda();
 
-    //friend Matrix exp<Storage>(const Matrix & m);
+private:
+    struct literal_assign_helper {
+
+        explicit literal_assign_helper(Matrix * m_): m(m_)
+        {
+            next();
+        }
+        ~literal_assign_helper()
+        {
+        }
+
+        const literal_assign_helper& operator, (
+            const T& val
+        ) const
+        {
+            (*m)(r, c) = val;
+            next();
+            return *this;
+        }
+
+    private:
+        void next() const
+        {
+            ++c;
+            if (c == m->nC()) {
+                c = 0;
+                ++r;
+            }
+            if (r == m->nR() && c == m->nC()) {
+                done = true;
+            }
+        }
+        friend class Matrix;
+        mutable bool done = false;
+        mutable long r = 0;
+        mutable long c = 0;
+        Matrix * m;
+
+    };
+
+public:
+
+    Matrix& operator = (
+        const literal_assign_helper& val
+    )
+    {
+        *this = *val.m;
+        return *this;
+    }
+
+    const literal_assign_helper operator = (
+        const T& val
+    )
+    {
+        for (T& vec_val : data) {
+            vec_val = val;
+        }
+        return literal_assign_helper(this);
+    }
 };
 
 template <typename Storage>
