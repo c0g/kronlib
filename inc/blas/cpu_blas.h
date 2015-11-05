@@ -16,17 +16,22 @@ inline void blas_gemm(State, const enum BlasOrder Order,
                       const int lda, const Storage & vecB, const int ldb, 
                       const typename Storage::value_type * beta, Storage & vecC, const int ldc)
 {
+    std::cout << "CPU DGEMM" << std::endl;
     using T = typename Storage::value_type;
     const T * A = thrust::raw_pointer_cast(vecA.data());
     const T * B = thrust::raw_pointer_cast(vecB.data());
+    std::cout << "Pointer cast" << std::endl;
+    T valAlpha = *alpha;
+    T valBeta = *beta;
+    std::cout << valAlpha << " " << valBeta << std::endl;
 
 
     T * C = thrust::raw_pointer_cast(vecC.data());
     cpu_blas_gemm(cblasOrder(Order), cblasTranspose(TransA), cblasTranspose(TransB), 
                 M, N, K,
-                *alpha, A, lda,
+                valAlpha, A, lda,
                 B, ldb,
-                *beta, C, ldc);
+                valBeta, C, ldc);
 }
 inline void cpu_blas_gemm(const enum CBLAS_ORDER Order,
                       const enum CBLAS_TRANSPOSE TransA,

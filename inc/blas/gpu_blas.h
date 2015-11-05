@@ -18,6 +18,7 @@ inline void blas_gemm(const cublasHandle_t handle,
                       const int lda, const device<T> & vecB, const int ldb,
                       const T * beta, device<T> & vecC, const int ldc)
 {
+    std::cout << "GPU DGEMM" << std::endl;
     const T * A = thrust::raw_pointer_cast(vecA.data());
     const T * B = thrust::raw_pointer_cast(vecB.data());
     T * C = thrust::raw_pointer_cast(vecC.data());

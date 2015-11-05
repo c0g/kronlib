@@ -17,7 +17,6 @@
 #include <thrust/fill.h>
 #include <thrust/inner_product.h>
 #include <thrust/functional.h>
-#include <thrust/iterator/constant_iterator.h>
 #include <thrust/iterator/counting_iterator.h>
 #include <thrust/iterator/transform_iterator.h>
 #include <thrust/gather.h>
@@ -79,23 +78,18 @@ private:
     void constinit() {
             T * vals = (T*)malloc(2 * sizeof(T));
             vals[0] = 0; vals[1] = 1;
-            zero = &vals[0];
-            one = &vals[1];
+   	    zero = &vals[0];
+	    one = &vals[1];
 #if THRUST_DEVICE_SYSTEM == THRUST_DEVICE_SYSTEM_CUDA
             auto status = cublasCreate(&handle);
             if (status != CUBLAS_STATUS_SUCCESS) {
                 std::cout << " Handle failed error " << std::endl;
                 exit(1);
             }
-            cudaMalloc(&dvals, sizeof(T) * 2);
-            cudaMemcpy(dvals, vals, sizeof(T) * 2, cudaMemcpyHostToDevice); 
-            zero = &dvals[0];
-            one = &dvals[1];
-            cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE);
+            cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_HOST);
             cublasSetAtomicsMode(handle, CUBLAS_ATOMICS_ALLOWED);
-#endif
+#endif 
     }
-
 #if THRUST_DEVICE_SYSTEM == THRUST_DEVICE_SYSTEM_CUDA
     cublasHandle_t handle;
 #else
@@ -156,7 +150,7 @@ public:
     {
         // Diagonal is at 0, nr + 1, 2 * nr + 2, etc. Sum those items.
         // Only care about leading square matrix:
-        size_t n = min(nr, nc);
+        size_t n = std::min(nr, nc);
         thrust::counting_iterator<size_t> idxs(0);
         auto map = thrust::make_transform_iterator(idxs, mult_by<size_t>(nr + 1));
         return thrust::reduce(thrust::make_permutation_iterator(data.begin(), map),
