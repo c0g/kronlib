@@ -47,22 +47,14 @@ class Matrix  {
     //friend KroneckerVectorStack<Storage, T>;
     //friend Cholesky<Storage, T>;
 public:
-    Matrix() : data{}, nr{0}, nc{0}, r0{0}, c0{0} {
-        constinit();
-    };
     Matrix(Storage data_, size_t r_,size_t c_) :
-        data{data_}, nr{r_}, nc{c_} {
-            constinit();
+        data{data_}, nr{r_}, nc{c_} 
+    {
+        constinit();
 	};
     template <typename OtherStorage>
-    Matrix(const Matrix<OtherStorage> & other) :
-        data{other.getConstData()}, nr{other.nR()}, nc{other.nC()} {
-            constinit();
-    }
-    Matrix(size_t r_, size_t c_) : Matrix()
-    {
-        set_size(r_, c_);
-    };
+    Matrix(const Matrix<OtherStorage> & other) : Matrix(other.getConstData(), other.nR(), other.nC()) {}
+    Matrix(size_t r_, size_t c_) : Matrix(Storage(r_ * c_), r_, c_) {}
     ~Matrix() {
 #if THRUST_DEVICE_SYSTEM == THRUST_DEVICE_SYSTEM_CUDA
 #endif
@@ -165,8 +157,7 @@ public:
 
     Matrix<Storage> transpose() const
     {
-        Matrix ans;
-        ans.set_size(nc, nr);
+        Matrix ans(nc, nr);
         thrust::counting_iterator<size_t> indices(0);
         auto transposed = thrust::make_transform_iterator(indices, transpose_index(nr, nc));
         Storage & ansData = ans.getMutableData();
