@@ -304,9 +304,9 @@ TEST(Matrix, ProductShape)
 
 TEST(Matrix, BigProductSingle)
 {
-    int M = 100;
-    int N = 100;
-    int K = 100;
+    int M = 1000;
+    int N = 1000;
+    int K = 1000;
     Matrix<host<float>> hmat1(M, N);
     Matrix<host<float>> hmat2(N, K);
     for (int r = 0; r < M; ++r) {
@@ -342,9 +342,9 @@ TEST(Matrix, BigProductSingle)
 
 TEST(Matrix, BigProductDouble)
 {
-    int M = 500;
-    int N = 500;
-    int K = 100;
+    int M = 1000;
+    int N = 1000;
+    int K = 1000;
     Matrix<host<double>> hmat1(M, N);
     Matrix<host<double>> hmat2(N, K);
     for (int r = 0; r < M; ++r) {

@@ -7,6 +7,7 @@ add_definitions(-DTHRUST_DEVICE_SYSTEM=THRUST_DEVICE_SYSTEM_CUDA)
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMake/Modules)
 message("${CMAKE_MODULE_PATH}")
 
+include("dlib/cmake")
 # Google test framework
 include("test/gtest.cmake")
 
@@ -15,13 +16,14 @@ find_package(CUDA)
 find_package(TBB)
 
 # Compiler flags - if GNU add in openmp
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3")
+set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -G -g")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3") 
 
 # Includes
-include_directories(${CUDA_INCLUDE_DIRS} ${OpenBLAS_INCLUDE_DIR} ${GTEST_INCLUDE_DIR} src inc)
+include_directories(${CUDA_INCLUDE_DIRS} ${OpenBLAS_INCLUDE_DIR} ${GTEST_INCLUDE_DIR} thrust src inc)
 
 ## Source files for executable
-set(SOURCE_FILES src/play.cpp)
+set(SOURCE_FILES src/play.cu)
 if(CUDA_FOUND)
 	CUDA_ADD_EXECUTABLE(KronMat ${SOURCE_FILES})
 	CUDA_ADD_CUBLAS_TO_TARGET(KronMat)
@@ -29,7 +31,7 @@ else()
 	add_executable(KronMat ${SOURCE_FILES})
 endif()
 
-target_link_libraries(KronMat ${OpenBLAS_LIB} ${TBB_LIBRARY} ${GTEST_BOTH_LIBRARIES}  ${CUDA_LIBRARIES})
+target_link_libraries(KronMat ${OpenBLAS_LIB} ${TBB_LIBRARY} ${GTEST_BOTH_LIBRARIES}  ${CUDA_LIBRARIES} dlib)
 
 # Tests
 enable_testing()
@@ -37,7 +39,7 @@ enable_testing()
 if(CUDA_FOUND)
 	CUDA_ADD_EXECUTABLE(matrix_test_cuda test/testmatrix.cu)
 	CUDA_ADD_CUBLAS_TO_TARGET(matrix_test_cuda)
-    target_link_libraries(matrix_test_cuda ${OpenBLAS_LIB}  ${TBB_LIBRARY} ${GTEST_LIBRARY} ${CUDA_LIBRARIES})
+    target_link_libraries(matrix_test_cuda ${OpenBLAS_LIB}  ${TBB_LIBRARY} ${GTEST_LIBRARY} ${CUDA_LIBRARIES} dlib)
 	add_test(matrix_test_cuda matrix_test_cuda)
 endif()
 #add_executable(matrix_test test/testmatrix.cpp)
