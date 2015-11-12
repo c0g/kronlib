@@ -22,18 +22,19 @@
 #include <thrust/gather.h>
 #include <cublas_v2.h>
 
-/*
-template<typename Storage, typename T>
+template<typename Storage>
 class Matrix;
 
-template<typename Storage, typename T>
+template<typename Storage>
+class Cholesky;
+
+template<typename Storage>
 class KroneckerMatrix;
 
+/*
 template<typename Storage, typename T>
 class KroneckerVectorStack;
 
-template<typename Storage, typename T>
-class Cholesky;
 
 template<typename Storage, typename T>
 Matrix<Storage, T> exp(const Matrix<T, Storage> &);
@@ -42,9 +43,9 @@ Matrix<Storage, T> exp(const Matrix<T, Storage> &);
 template<typename Storage>
 class Matrix  {
 	using T = typename Storage::value_type;
-    //friend KroneckerMatrix<Storage, T>;
+    friend KroneckerMatrix<Storage>;
     //friend KroneckerVectorStack<Storage, T>;
-    //friend Cholesky<Storage, T>;
+    friend Cholesky<Storage>;
 public:
     Matrix(Storage data_, size_t r_,size_t c_) :
         data{data_}, nr{r_}, nc{c_} 

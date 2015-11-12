@@ -5,8 +5,6 @@
 #define KRONMAT_BLAS_WRAP_H
 
 
-extern "C" {
-};
 #include <cblas.h>
 #include <lapacke.h>
 

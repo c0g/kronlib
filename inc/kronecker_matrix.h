@@ -13,37 +13,38 @@
 
 
 
-template <typename T>
-class KroneckerVectorStack;
+//template <typename T>
+//class KroneckerVectorStack;
 
-template <typename T>
+template <typename Storage>
 class KroneckerMatrix  {
-    friend Matrix<T>;
-    friend KroneckerVectorStack<T>;
+    friend Matrix<Storage>;
+//    friend KroneckerVectorStack<T>;
 
 public:
 
 
 private:
 public:
-    KroneckerMatrix(const std::vector<Matrix<T>> &sub_matrices) : sub_matrices(sub_matrices) { }
+    KroneckerMatrix(const std::vector<Matrix<Storage>> &sub_matrices) : sub_matrices(sub_matrices) { }
     KroneckerMatrix() {}
 
 private:
-    std::vector<Matrix<T>> sub_matrices;
+    std::vector<Matrix<Storage>> sub_matrices;
 public:
 
-    void push_matrix(const Matrix<T> & mat)
+    void push_matrix(const Matrix<Storage> & mat)
     {
         sub_matrices.push_back(mat);
     }
 
-    KroneckerMatrix<T> operator*(const KroneckerMatrix<T> & other) const
+    KroneckerMatrix<Storage> operator*(const KroneckerMatrix<Storage> & other) const
     {
         auto newsub_matrices = kronmat_dot_kronmat(sub_matrices, other.sub_matrices);
         return KroneckerMatrix(newsub_matrices);
     }
 
+    /*
     KroneckerVectorStack<T> operator*(const KroneckerVectorStack<T> & other) const
     {
         assert(other.isTrans()); // kronecker dimensions need to line up
@@ -51,8 +52,13 @@ public:
         KroneckerVectorStack<T> ans(newsub_matrices);
         return ans.transpose();
     }
-
-    Matrix<T> operator*(const Matrix<T> & other) const
+    */
+    Matrix<Storage> solve(const Matrix<Storage> & other) const
+    {
+        assert(other.nC() == 1 && "The full Matrix can only be a column vector");
+        return kronmat_solve_fullvec(sub_matrices, other);
+    }
+    Matrix<Storage> operator*(const Matrix<Storage> & other) const
     {
         assert(other.nC() == 1 && "The full Matrix can only be a column vector");
         return kronmat_dot_fullvec(sub_matrices, other);
@@ -75,26 +81,24 @@ public:
         return cols;
     }
 
-    Matrix<T> full() const 
+    Matrix<Storage> full() const 
     {
         auto ans = kron_full(sub_matrices);
         return ans;
 
     }
 
-    void mutable_transpose()
-    {
-        for (Matrix<T> & m : sub_matrices) m.mutable_transpose();
-    }
-
     KroneckerMatrix transpose() const
     {
-        KroneckerMatrix ans = (*this);
-        ans.mutable_transpose();
+        KroneckerMatrix<Storage> ans;
+        for (const auto & m : sub_matrices)
+        {
+            ans.push_matrix(m.transpose());
+        }
         return ans;
     }
 
-    bool operator==(const KroneckerMatrix<T> & other) const
+    bool operator==(const KroneckerMatrix<Storage> & other) const
     {
         bool match = true;
         assert(sub_matrices.size() == other.sub_matrices.size());
@@ -112,9 +116,9 @@ public:
         }
     }
 };
-template <typename T>
+template <typename Storage>
 std::ostream& operator<< (
-    std::ostream& out, KroneckerMatrix<T> K
+    std::ostream& out, KroneckerMatrix<Storage> K
 ) 
 {
     K.print_submatrices(out);

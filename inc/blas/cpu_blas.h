@@ -7,6 +7,8 @@
 #include "storage.h"
 #include <cblas.h>
 #include "blas_ops.h"
+#include <thrust/device_vector.h>
+#include <thrust/host_vector.h>
 
 template <typename Storage, typename State> // 'state' is used in CUDA
 inline void blas_gemm(State, const enum BlasOrder Order,
