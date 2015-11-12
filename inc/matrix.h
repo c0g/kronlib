@@ -8,7 +8,7 @@
 #include <vector>
 #include <iostream>
 #include <assert.h>
-#include "storage.h"
+#include "backend.h"
 #include "blas/blas.h"
 #include "functors.h"
 #include <cmath>
@@ -22,77 +22,40 @@
 #include <thrust/gather.h>
 #include <cublas_v2.h>
 
-template<typename Storage>
+namespace kronlib {
+template<typename Backend>
 class Matrix;
 
-template<typename Storage>
+template<typename Backend>
 class Cholesky;
 
-template<typename Storage>
+template<typename Backend>
 class KroneckerMatrix;
 
 /*
-template<typename Storage, typename T>
+template<typename Backend, typename T>
 class KroneckerVectorStack;
 
 
-template<typename Storage, typename T>
-Matrix<Storage, T> exp(const Matrix<T, Storage> &);
+template<typename Backend, typename T>
+Matrix<Backend, T> exp(const Matrix<T, Storage> &);
 */
 
-template<typename Storage>
+template<typename Backend>
 class Matrix  {
-	using T = typename Storage::value_type;
-    friend KroneckerMatrix<Storage>;
-    //friend KroneckerVectorStack<Storage, T>;
-    friend Cholesky<Storage>;
+    using Storage = typename Backend::Storage;
+	using T = typename Backend::Storage::value_type;
+    friend KroneckerMatrix<Backend>;
+    //friend KroneckerVectorStack<Backend, T>;
+    friend Cholesky<Backend>;
 public:
-    Matrix(Storage data_, size_t r_,size_t c_) :
-        data{data_}, nr{r_}, nc{c_} 
-    {
-        constinit();
-	};
-    template <typename OtherStorage>
-    Matrix(const Matrix<OtherStorage> & other) : Matrix(other.getConstData(), other.nR(), other.nC()) {}
-    Matrix(size_t r_, size_t c_) : Matrix(Storage(r_ * c_), r_, c_) {}
-    ~Matrix() {
-#if THRUST_DEVICE_SYSTEM == THRUST_DEVICE_SYSTEM_CUDA
-#endif
-    }
-    void set_size(size_t r, size_t c)
-    {
-        nr = r;
-    	nc = c;
-        data.resize(nr * nc, 0);
+    Matrix(std::shared_ptr<Backend> context_, Storage data_, size_t r_,size_t c_) : context{context_}, data{data_}, nr{r_}, nc{c_} {}
+    Matrix(size_t r_, size_t c_) : Matrix(std::make_shared<Backend>(), Storage(r_ * c_), r_, c_) {}
+    template <typename OtherBackend>
+        Matrix(const Matrix<OtherBackend> & other) : Matrix(std::make_shared<Backend>(), other.getConstData(), other.nR(), other.nC()) {}
 
-    }
 private:
-
-    void constinit() {
-            T * vals = (T*)malloc(2 * sizeof(T));
-            vals[0] = 0; vals[1] = 1;
-   	    zero = &vals[0];
-	    one = &vals[1];
-#if THRUST_DEVICE_SYSTEM == THRUST_DEVICE_SYSTEM_CUDA
-            auto status = cublasCreate(&handle);
-            if (status != CUBLAS_STATUS_SUCCESS) {
-                std::cout << " Handle failed error " << std::endl;
-                exit(1);
-            }
-            cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_HOST);
-            cublasSetAtomicsMode(handle, CUBLAS_ATOMICS_ALLOWED);
-#endif 
-    }
-#if THRUST_DEVICE_SYSTEM == THRUST_DEVICE_SYSTEM_CUDA
-    cublasHandle_t handle;
-#else
-    int handle = 0;
-#endif 
-    T * vals;
-    T * dvals;
-    T * zero;
-    T * one;
-
+    std::shared_ptr<Backend> context;
     Storage data;
     size_t nr;
     size_t nc;
@@ -118,6 +81,7 @@ private:
 
 public:
 
+    std::shared_ptr<Backend> getContext() const { return context; };
     const T * begindata() const
     {
         return data.data();
@@ -150,13 +114,13 @@ public:
                                          thrust::make_permutation_iterator(data.begin(), map + n));
     }
 
-    Matrix<Storage> transpose() const
+    Matrix<Backend> transpose() const
     {
         Matrix ans(nc, nr);
         thrust::counting_iterator<size_t> indices(0);
         auto transposed = thrust::make_transform_iterator(indices, transpose_index(nr, nc));
         Storage & ansData = ans.getMutableData();
-        thrust::gather(transposed, transposed + ansData.size(), data.begin(), ansData.begin());
+        thrust::gather(context->exec(), transposed, transposed + ansData.size(), data.begin(), ansData.begin());
         return ans;
     }
     void reshape_inplace(size_t newr, size_t newc) {
@@ -164,11 +128,11 @@ public:
         nr = newr;
         nc = newc;
     }
-    Matrix<Storage> reshape(size_t newr, size_t newc) const
+    Matrix<Backend> reshape(size_t newr, size_t newc) const
     {
         assert(nR() * nC() == newr * newc);
         Storage newdata = data;
-        return Matrix(newdata, newr, newc);
+        return Matrix(context, newdata, newr, newc);
     }
     void setat(size_t ridx, size_t cidx, T val) {
         assert(ridx < nR());
@@ -182,7 +146,7 @@ public:
         return data[vecidx(ridx, cidx)];
     }
 
-    Matrix<Storage> operator*(const Matrix<Storage> &other) const
+    Matrix<Backend> operator*(const Matrix<Backend> &other) const
     {
         BlasTranspose meTrans = N;
         BlasTranspose otherTrans = N;
@@ -201,15 +165,15 @@ public:
         Storage new_data;
         new_data.resize(nR() * other.nC());
 
-        blas_gemm(handle, COL, meTrans, otherTrans, M, N, K, one,
+        blas_gemm(context, COL, meTrans, otherTrans, M, N, K, context->one(),
                   data, lda, other.getConstData(), ldb,
-                  zero, new_data, ldc);
+                  context->zero(), new_data, ldc);
 
-        return Matrix(new_data, nR(), other.nC());
+        return Matrix(context, new_data, nR(), other.nC());
     }
 
     /* Removed until I can get clearer idea of how to make mutable transpose work
-    Matrix<Storage> Tdot(const Matrix<Storage> &other)
+    Matrix<Backend> Tdot(const Matrix<Storage> &other)
     {
         mutable_transpose();
         auto ans = (*this) * other;
@@ -218,7 +182,7 @@ public:
     }
     */
 /*
-    Matrix<Storage> operator*(const KroneckerVectorStack<T> kvs) {
+    Matrix<Backend> operator*(const KroneckerVectorStack<T> kvs) {
         assert(nR() == 1 && "Only works when matrix is a row vector!");
         return vec_dot_kvs((*this), kvs);
     }
@@ -230,14 +194,14 @@ public:
         assert(nR() == other.nR());
         assert(nC() == other.nC());
         bool init = true;
-        return thrust::inner_product(data.begin(), data.end(), other.getConstData().begin(), init, and_reduce(), thrust::equal_to<T>());
+        return thrust::inner_product(context->exec(), data.begin(), data.end(), other.getConstData().begin(), init, and_reduce(), thrust::equal_to<T>());
     }
 
     bool operator!=(const Matrix & other) const
     {
         return !((*this) == other);
     }
-    Matrix operator+(const Matrix<Storage> &other) const
+    Matrix operator+(const Matrix<Backend> &other) const
     {
         assert(nR() == other.nR());
         assert(nC() == other.nC());
@@ -246,7 +210,7 @@ public:
         return ans;
     }
 
-    Matrix operator-(const Matrix<Storage> &other) const
+    Matrix operator-(const Matrix<Backend> &other) const
     {
         assert(nR() == other.nR());
         assert(nC() == other.nC());
@@ -255,7 +219,7 @@ public:
         return ans;
     }
 
-    Matrix elemwise_mult(const Matrix<Storage> &other) const
+    Matrix elemwise_mult(const Matrix<Backend> &other) const
     {
         assert(nR() == other.nR());
         assert(nC() == other.nC());
@@ -264,7 +228,7 @@ public:
         return ans;
 
     }
-    Matrix elemwise_div(const Matrix<Storage> &other) const
+    Matrix elemwise_div(const Matrix<Backend> &other) const
     {
         assert(nR() == other.nR());
         assert(nC() == other.nC());
@@ -272,95 +236,96 @@ public:
         ans.elemwise_div_inplace(other);
         return ans;
     }
-    void operator+=(const Matrix<Storage> &other)
+    void operator+=(const Matrix<Backend> &other)
     {
         assert(nR() == other.nR());
         assert(nC() == other.nC());
-        thrust::transform(data.begin(), data.end(), other.getConstData().begin(), data.begin(), thrust::plus<T>());
+        thrust::transform(context->exec(), data.begin(), data.end(), other.getConstData().begin(), data.begin(), thrust::plus<T>());
     }
-    void operator-=(const Matrix<Storage> &other)
+    void operator-=(const Matrix<Backend> &other)
     {
         assert(nR() == other.nR());
         assert(nC() == other.nC());
-        thrust::transform(data.begin(), data.end(), other.getConstData().begin(), data.begin(), thrust::minus<T>());
+        thrust::transform(context->exec(), data.begin(), data.end(), other.getConstData().begin(), data.begin(), thrust::minus<T>());
     }
-    void elemwise_div_inplace(const Matrix<Storage> &other)
+    void elemwise_div_inplace(const Matrix<Backend> &other)
     {
         assert(nR() == other.nR());
         assert(nC() == other.nC());
-        thrust::transform(data.begin(), data.end(), other.getConstData().begin(), data.begin(), thrust::divides<T>());
+        thrust::transform(context->exec(), data.begin(), data.end(), other.getConstData().begin(), data.begin(), thrust::divides<T>());
     }
-    void elemwise_mult_inplace(const Matrix<Storage> &other)
+    void elemwise_mult_inplace(const Matrix<Backend> &other)
     {
         assert(nR() == other.nR());
         assert(nC() == other.nC());
-        thrust::transform(data.begin(), data.end(), other.getConstData().begin(), data.begin(), thrust::multiplies<T>());
+        thrust::transform(context->exec(), data.begin(), data.end(), other.getConstData().begin(), data.begin(), thrust::multiplies<T>());
     }
     
     // Operations with scalars
     Matrix operator+(T val) const
     {
-        Matrix<Storage> ans = (*this);
+        Matrix<Backend> ans = (*this);
         ans += val;
         return ans;
     }
     Matrix operator-(T val) const
     {
-        Matrix<Storage> ans = (*this);
+        Matrix<Backend> ans = (*this);
         ans -= val;
         return ans;
     }
     Matrix operator*(T val) const
     {
-        Matrix<Storage> ans = (*this);
+        Matrix<Backend> ans = (*this);
         ans *= val;
         return ans;
     }
     Matrix operator/(T val) const
     {
-        Matrix<Storage> ans = (*this);
+        Matrix<Backend> ans = (*this);
         ans /= val;
         return ans;
     }
     void operator+=(T val)
     {
-        thrust::transform(data.begin(), data.end(), data.begin(), add_by<T>(val));
+        thrust::transform(context->exec(), data.begin(), data.end(), data.begin(), add_by<T>(val));
     }
     void operator-=(T val)
     {
-        thrust::transform(data.begin(), data.end(), data.begin(), minus_by<T>(val));
+        thrust::transform(context->exec(), data.begin(), data.end(), data.begin(), minus_by<T>(val));
     }
     void operator*=(T val)
     {
-        thrust::transform(data.begin(), data.end(), data.begin(), mult_by<T>(val));
+        thrust::transform(context->exec(), data.begin(), data.end(), data.begin(), mult_by<T>(val));
     }
     void operator/=(T val)
     {
-        thrust::transform(data.begin(), data.end(), data.begin(), div_by<T>(val));
+        thrust::transform(context->exec(), data.begin(), data.end(), data.begin(), div_by<T>(val));
     }
 
     Matrix operator-() const
     {
-        Matrix<Storage> ans = (*this);
+        Matrix<Backend> ans = (*this);
         ans.negate_inplace();
         return ans;
     }
     void negate_inplace()
     {
-        thrust::transform(data.begin(), data.end(), data.begin(), thrust::negate<T>()); 
+        auto exec = context->exec();
+        thrust::transform(exec, data.begin(), data.end(), data.begin(), thrust::negate<T>()); 
     }
     void exp_inplace()
     {
-        thrust::transform(data.begin(), data.end(), data.begin(), exponentiate<T>()); 
+        thrust::transform(context->exec(), data.begin(), data.end(), data.begin(), exponentiate<T>()); 
     }
 
-    Matrix<Storage> solve(const Matrix<Storage> & other)
+    Matrix<Backend> solve(const Matrix<Storage> & other)
     {
         return *this;
     }
     void apply_lambda();
     // defined in kronecker Matrix;
-    // Matrix<Storage> Matrix<Storage>::operator*(const KroneckerMatrix<Storage> &other);
+    // Matrix<Backend> Matrix<Storage>::operator*(const KroneckerMatrix<Storage> &other);
 
 private:
     struct literal_assign_helper {
@@ -421,9 +386,9 @@ public:
     }
 };
 
-template <typename Storage>
+template <typename Backend>
 std::ostream& operator<<(
-    std::ostream& out, Matrix<Storage> M
+    std::ostream& out, Matrix<Backend> M
 )
 {
     for (size_t row = 0; row < M.nR(); ++row) {
@@ -435,18 +400,19 @@ std::ostream& operator<<(
     return out;
 }
 
-template <typename Storage>
-Matrix<Storage> exp(const Matrix<Storage> & m)
+template <typename Backend>
+Matrix<Backend> exp(const Matrix<Backend> & m)
 {
-    Matrix<Storage> ans = m;
+    Matrix<Backend> ans = m;
     ans.exp_inplace();
     return ans;
 }
 
-template <typename Storage, typename N>
-Matrix<Storage> operator*(N val, const Matrix<Storage> & m)
+template <typename Backend, typename N>
+Matrix<Backend> operator*(N val, const Matrix<typename Backend::Storage> & m)
 {
     return m * val;
 }
 
+}
 #endif //KRONMAT_Matrix_H

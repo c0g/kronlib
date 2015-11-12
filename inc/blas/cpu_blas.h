@@ -9,32 +9,7 @@
 #include "blas_ops.h"
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
-
-template <typename Storage, typename State> // 'state' is used in CUDA
-inline void blas_gemm(State, const enum BlasOrder Order,
-                      const enum BlasTranspose TransA,
-                      const enum BlasTranspose TransB, const int M, const int N,
-                      const int K, const typename Storage::value_type * alpha, const Storage & vecA,
-                      const int lda, const Storage & vecB, const int ldb, 
-                      const typename Storage::value_type * beta, Storage & vecC, const int ldc)
-{
-    std::cout << "CPU DGEMM" << std::endl;
-    using T = typename Storage::value_type;
-    const T * A = thrust::raw_pointer_cast(vecA.data());
-    const T * B = thrust::raw_pointer_cast(vecB.data());
-    std::cout << "Pointer cast" << std::endl;
-    T valAlpha = *alpha;
-    T valBeta = *beta;
-    std::cout << valAlpha << " " << valBeta << std::endl;
-
-
-    T * C = thrust::raw_pointer_cast(vecC.data());
-    cpu_blas_gemm(cblasOrder(Order), cblasTranspose(TransA), cblasTranspose(TransB), 
-                M, N, K,
-                valAlpha, A, lda,
-                B, ldb,
-                valBeta, C, ldc);
-}
+namespace kronlib {
 inline void cpu_blas_gemm(const enum CBLAS_ORDER Order,
                       const enum CBLAS_TRANSPOSE TransA,
                       const enum CBLAS_TRANSPOSE TransB, const int M, const int N,
@@ -59,6 +34,27 @@ inline void cpu_blas_gemm(const enum CBLAS_ORDER Order,
                 alpha, A, lda,
                 B, ldb,
                 beta, C, ldc);
+}
+template <typename Storage, typename State> // 'state' is used in CUDA
+inline void blas_gemm(State, const enum BlasOrder Order,
+                      const enum BlasTranspose TransA,
+                      const enum BlasTranspose TransB, const int M, const int N,
+                      const int K, const typename Storage::value_type * alpha, const Storage & vecA,
+                      const int lda, const Storage & vecB, const int ldb, 
+                      const typename Storage::value_type * beta, Storage & vecC, const int ldc)
+{
+    using T = typename Storage::value_type;
+    const T * A = thrust::raw_pointer_cast(vecA.data());
+    const T * B = thrust::raw_pointer_cast(vecB.data());
+    T valAlpha = *alpha;
+    T valBeta = *beta;
+
+    T * C = thrust::raw_pointer_cast(vecC.data());
+    cpu_blas_gemm(cblasOrder(Order), cblasTranspose(TransA), cblasTranspose(TransB), 
+                M, N, K,
+                valAlpha, A, lda,
+                B, ldb,
+                valBeta, C, ldc);
 }
 
 template <typename Storage>
@@ -103,4 +99,5 @@ inline void blas_axpy(int N, float mult, const float * X, int incX, float * Y, i
 {
     cblas_saxpy(N, mult, X, incX, Y, incY);
 }
+};
 #endif

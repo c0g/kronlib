@@ -8,25 +8,7 @@
 #include "blas_ops.h"
 #include <cublas_v2.h>
 #include "storage.h"
-
-template <typename T>
-inline void blas_gemm(const cublasHandle_t handle,
-                      const enum BlasOrder Order,
-                      const enum BlasTranspose TransA,
-                      const enum BlasTranspose TransB, const int M, const int N,
-                      const int K, const T * alpha, const device<T> & vecA,
-                      const int lda, const device<T> & vecB, const int ldb,
-                      const T * beta, device<T> & vecC, const int ldc)
-{
-    std::cout << "GPU DGEMM" << std::endl;
-    const T * A = thrust::raw_pointer_cast(vecA.data());
-    const T * B = thrust::raw_pointer_cast(vecB.data());
-    T * C = thrust::raw_pointer_cast(vecC.data());
-    cuda_blas_gemm(handle, cublasTranspose(TransA), cublasTranspose(TransB), M, N, K,
-                alpha, A, lda,
-                B, ldb,
-                beta, C, ldc);
-}
+namespace kronlib {
 
 inline void cuda_blas_gemm(const cublasHandle_t handle,
                       const cublasOperation_t TransA,
@@ -54,4 +36,23 @@ inline void cuda_blas_gemm(const cublasHandle_t handle,
                 beta, C, ldc);
 }
 
+template <typename T>
+inline void blas_gemm(const std::shared_ptr<kronlib::backend::CUDAContext<T>> context,
+                      const enum BlasOrder Order,
+                      const enum BlasTranspose TransA,
+                      const enum BlasTranspose TransB, const int M, const int N,
+                      const int K, const T * alpha, const typename kronlib::backend::CUDAContext<T>::Storage & vecA,
+                      const int lda, const typename kronlib::backend::CUDAContext<T>::Storage & vecB, const int ldb,
+                      const T * beta, typename kronlib::backend::CUDAContext<T>::Storage & vecC, const int ldc)
+{
+    const T * A = thrust::raw_pointer_cast(vecA.data());
+    const T * B = thrust::raw_pointer_cast(vecB.data());
+    T * C = thrust::raw_pointer_cast(vecC.data());
+    cuda_blas_gemm(context->blas, cublasTranspose(TransA), cublasTranspose(TransB), M, N, K,
+                alpha, A, lda,
+                B, ldb,
+                beta, C, ldc);
+}
+};
 #endif // CUDA_BLAS_H
+

@@ -6,7 +6,7 @@
 #include "cholesky.h"
 #include "iostream"
 #include "gtest/gtest.h"
-
+/*
 TEST(Cholesky, CalcAndEquality)
 {
     Matrix<host<float>> mat(3, 3);
@@ -35,7 +35,7 @@ TEST(Cholesky, Inverse)
     }
 }
 */
-
+/*
 TEST(Cholesky, Solve)
 {
     Matrix<host<float>> mat(3, 3);
@@ -95,7 +95,7 @@ TEST(Cholesky, LogDet)
     EXPECT_FLOAT_EQ(ld, chol.logdet());
 
 }
-
+*/
 int main(int argc, char **argv)
 {
     std::cout << "Running test" << std::endl;

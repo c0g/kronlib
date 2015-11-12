@@ -1,25 +1,30 @@
 #include <iostream>
 #include <dlib/timing.h>
-#include "matrix.h"
+#include "kronlib.h"
+
+using namespace kronlib;
 
 int main() {
+    TBBMatrix<float> tbb(1000, 1000);
+    CUDAMatrix<float> cuda(1000, 1000);
+    HostMatrix<float> host(1000, 1000);
 
-	Matrix<host<float>> hm1(500,2000);
-	Matrix<host<float>> hm2(500,2000);
-	dlib::timing::start(1, "copy");	
-	Matrix<device<float>> m1 = hm1;
-	Matrix<device<float>> m2 = hm2; 
-	dlib::timing::stop(1);
-	dlib::timing::start(2, "DEV mult");	
-	Matrix<device<float>> m3 = m1 * m2;
-	dlib::timing::stop(2);
-	dlib::timing::start(3, "HOST mult");
-	auto hm3 = hm1 * hm2;
-	dlib::timing::stop(3);
+    dlib::timing::start(1, "tbb");
+    auto tbbp = tbb * tbb.transpose();
+    tbbp.negate_inplace();
 
-	std::cout << m3(0, 0) << std::endl;
-	std::cout << hm3(0, 0) << std::endl;
-	dlib::timing::print();
+    dlib::timing::stop(1);
+    dlib::timing::start(2, "cuda");
+    auto cudap = cuda * cuda.transpose();
+    cudap.negate_inplace();
+    dlib::timing::stop(2);
+    dlib::timing::start(3, "host");
+    auto hostp = host * host.transpose();
+    hostp.negate_inplace();
+    dlib::timing::stop(3);
+    dlib::timing::print();
+    std::cout << tbbp(0,0) << cudap(0,0) << hostp(0,0) <<std::endl;
 
-	return 0;
+
+    return 0;
 }

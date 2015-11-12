@@ -2,25 +2,23 @@
 // Created by Thomas Nickson on 05/07/2015.
 //
 
-#include "testmatrix.h"
-#include "matrix.h"
+#include "kronlib.h"
 #include "iostream"
 #include "gtest/gtest.h"
-TEST(Matrix, SetScalar)
+using namespace kronlib;
+TEST(Matrix, SetScalarTBB)
 {
-    Matrix<host<float>> hmat(2, 3);
-    hmat = 1;
-    Matrix<device<float>> mat = hmat;
-
+    TBBMatrix<float> mat(2, 3);
+    mat = 1;
     for (int r = 0; r < 2; ++r) {
         for (int c = 0; c < 3; ++c) {
             EXPECT_EQ(mat(r, c), 1);
         }
     }
 }
-TEST(Matrix, SetSeq)
+TEST(Matrix, SetSeqTBB)
 {
-    Matrix<device<float>> mat(2, 3);
+    TBBMatrix<float> mat(2, 3);
     mat = 1, 2, 3, 4, 5, 6;
     int ans = 1;
     for (int r = 0; r < 2; ++r) {
@@ -31,12 +29,12 @@ TEST(Matrix, SetSeq)
     }
 }
 
-TEST(Matrix, MinusInplace)
+TEST(Matrix, MinusInplaceTBB)
 {
-    Matrix<device<float>> mat(2, 2);
+    TBBMatrix<float> mat(2, 2);
     mat = 1, 2, 3, 4;
     
-    Matrix<device<float>> mat_minus(2, 2);
+    TBBMatrix<float> mat_minus(2, 2);
     mat_minus = -1, -2, -3, -4;
 
     mat.negate_inplace();
@@ -46,10 +44,10 @@ TEST(Matrix, MinusInplace)
 
 TEST(Matrix, MinusNotInplace)
 {
-    Matrix<device<float>> mat(2, 2);
+    TBBMatrix<float> mat(2, 2);
     mat = 1, 2, 3, 4;
     
-    Matrix<device<float>> mat_minus(2, 2);
+    TBBMatrix<float> mat_minus(2, 2);
     mat_minus = -1, -2, -3, -4;
 
     auto mat_minus2 = -mat;
@@ -59,10 +57,10 @@ TEST(Matrix, MinusNotInplace)
 
 TEST(Matrix, ExpInplace)
 {
-    Matrix<device<float>> mat(2, 2);
+    TBBMatrix<float> mat(2, 2);
     mat = 1, 2, 3, 4;
     
-    Matrix<device<float>> mat_exp(2, 2);
+    TBBMatrix<float> mat_exp(2, 2);
     mat_exp = std::exp(1), std::exp(2), std::exp(3), std::exp(4);
 
     mat.exp_inplace();
@@ -72,10 +70,10 @@ TEST(Matrix, ExpInplace)
 
 TEST(Matrix, ExpNotInplace)
 {
-    Matrix<device<float>> mat(2, 2);
+    TBBMatrix<float> mat(2, 2);
     mat = 1, 2, 3, 4;
     
-    Matrix<device<float>> mat_exp(2, 2);
+    TBBMatrix<float> mat_exp(2, 2);
     mat_exp = std::exp(1), std::exp(2), std::exp(3), std::exp(4);
 
     auto mat_exp2 = exp(mat);
@@ -85,9 +83,9 @@ TEST(Matrix, ExpNotInplace)
 
 TEST(Matrix, EqualsAssignment)
 {
-    Matrix<device<float>> mat(2, 3);
+    TBBMatrix<float> mat(2, 3);
     mat = 1, 2, 3, 4, 5, 6;
-    Matrix<device<float>> mat2 = mat + 1;
+    TBBMatrix<float> mat2 = mat + 1;
     for (int r = 0; r < 2; ++r) {
         for (int c = 0; c < 3; ++c) {
             if ((r == 0) && (c == 0)) {
@@ -109,24 +107,24 @@ TEST(Matrix, EqualsAssignment)
 
 TEST(Matrix, Equality)
 {
-    Matrix<device<float>> mat1(2, 3);
+    TBBMatrix<float> mat1(2, 3);
     mat1 = 1, 2, 3, 4, 5, 6;
-    Matrix<device<float>> mat2(2, 3);
+    TBBMatrix<float> mat2(2, 3);
     mat2 = 1, 2, 3, 4, 5, 6;
     ASSERT_TRUE(mat1 == mat2);
 }
 TEST(Matrix, Inequality)
 {
-    Matrix<device<float>> mat1(2, 3);
+    TBBMatrix<float> mat1(2, 3);
     mat1 = 1, 2, 3, 4, 5, 6;
-    Matrix<device<float>> mat2(2, 3);
+    TBBMatrix<float> mat2(2, 3);
     mat2 = 1, 2, 3, 4, 5, 7;
     ASSERT_FALSE(mat1 == mat2);
 }
 
 TEST(Matrix, TransposeIndexing)
 {
-    Matrix<device<float>> mat(20, 30);
+    TBBMatrix<float> mat(20, 30);
     for (int r = 0; r < 20; ++r) {
         for (int c = 0; c < 30; ++c) {
             mat.setat(r, c, r + c);
@@ -142,7 +140,7 @@ TEST(Matrix, TransposeIndexing)
 
 TEST(Matrix, Negate)
 {
-    Matrix<device<float>> mat(2, 3);
+    TBBMatrix<float> mat(2, 3);
     mat = 1, 2, 3, 4, 5, 6;
     auto mat2 = -mat;
     for (int r = 0; r < 2; ++r) {
@@ -154,9 +152,9 @@ TEST(Matrix, Negate)
 
 TEST(Matrix, ScalarAdd)
 {
-    Matrix<device<float>> mat(2, 3);
+    TBBMatrix<float> mat(2, 3);
     mat = 1, 2, 3, 4, 5, 6;
-    Matrix<device<float>> mat2 = mat + 1;
+    TBBMatrix<float> mat2 = mat + 1;
     for (int r = 0; r < 2; ++r) {
         for (int c = 0; c < 3; ++c) {
             EXPECT_EQ(mat(r, c) + 1, mat2(r, c));
@@ -166,9 +164,9 @@ TEST(Matrix, ScalarAdd)
 
 TEST(Matrix, ScalarMinus)
 {
-    Matrix<device<float>> mat(2, 3);
+    TBBMatrix<float> mat(2, 3);
     mat = 1, 2, 3, 4, 5, 6;
-    Matrix<device<float>> mat2 = mat - 1;
+    TBBMatrix<float> mat2 = mat - 1;
     for (int r = 0; r < 2; ++r) {
         for (int c = 0; c < 3; ++c) {
             EXPECT_EQ(mat(r, c) - 1, mat2(r, c));
@@ -178,9 +176,9 @@ TEST(Matrix, ScalarMinus)
 
 TEST(Matrix, MatrixAdd)
 {
-    Matrix<device<float>> mat1(2, 3);
+    TBBMatrix<float> mat1(2, 3);
     mat1 = 1, 2, 3, 4, 5, 6;
-    Matrix<device<float>> mat2(2, 3);
+    TBBMatrix<float> mat2(2, 3);
     mat2 = 0, 1, 2, 3, 4, 5;
 
     auto mat_sum = mat1 + mat2;
@@ -194,9 +192,9 @@ TEST(Matrix, MatrixAdd)
 
 TEST(Matrix, MatrixMinus)
 {
-    Matrix<device<float>> mat1(2, 3);
+    TBBMatrix<float> mat1(2, 3);
     mat1 = 1, 2, 3, 4, 5, 6;
-    Matrix<device<float>> mat2(2, 3);
+    TBBMatrix<float> mat2(2, 3);
     mat2 = 0, 1, 2, 3, 4, 5;
 
     auto mat_sum = mat1 - mat2;
@@ -210,9 +208,9 @@ TEST(Matrix, MatrixMinus)
 
 TEST(Matrix, ScalarMul)
 {
-    Matrix<device<float>> mat(2, 3);
+    TBBMatrix<float> mat(2, 3);
     mat = 1, 2, 3, 4, 5, 6;
-    Matrix<device<float>> mat2 = mat * 2;
+    TBBMatrix<float> mat2 = mat * 2;
     for (int r = 0; r < 2; ++r) {
         for (int c = 0; c < 3; ++c) {
             EXPECT_EQ(mat(r, c) * 2, mat2(r, c));
@@ -222,9 +220,9 @@ TEST(Matrix, ScalarMul)
 
 TEST(Matrix, ScalarDiv)
 {
-    Matrix<device<float>> mat(2, 3);
+    TBBMatrix<float> mat(2, 3);
     mat = 1, 2, 3, 4, 5, 6;
-    Matrix<device<float>> mat2 = mat / 2;
+    TBBMatrix<float> mat2 = mat / 2;
     for (int r = 0; r < 2; ++r) {
         for (int c = 0; c < 3; ++c) {
             EXPECT_EQ(mat(r, c) / 2, mat2(r, c));
@@ -236,9 +234,9 @@ TEST(Matrix, ScalarDiv)
 
 TEST(Matrix, Hadamard)
 {
-    Matrix<device<float>> mat1(2, 3);
+    TBBMatrix<float> mat1(2, 3);
     mat1 = 1, 2, 3, 4, 5, 6;
-    Matrix<device<float>> mat2(2, 3);
+    TBBMatrix<float> mat2(2, 3);
     mat2 = 0, 1, 2, 3, 4, 5;
     auto mat_hadam = mat1.elemwise_mult(mat2);
     for (int r = 0; r < 2; ++r) {
@@ -249,15 +247,15 @@ TEST(Matrix, Hadamard)
 }
 TEST(Matrix, SimpleProduct)
 {
-    Matrix<device<float>> mat1(2, 3);
+    TBBMatrix<float> mat1(2, 3);
     mat1 = 1, 2, 3, 4, 5, 6;
-    Matrix<device<float>> mat2(3, 2);
+    TBBMatrix<float> mat2(3, 2);
     mat2 = 0, 1, 2, 3, 4, 5;
 
-    Matrix<device<float>> mat_ans12(2, 2);
+    TBBMatrix<float> mat_ans12(2, 2);
     mat_ans12 = 16, 22, 34, 49;
 
-    Matrix<device<float>> mat_ans21(3, 3);
+    TBBMatrix<float> mat_ans21(3, 3);
     mat_ans21 = 4, 5, 6, 14, 19, 24, 24, 33, 42;
 
     auto mat_prod12 = mat1 * mat2;
@@ -269,11 +267,11 @@ TEST(Matrix, SimpleProduct)
 
 TEST(Matrix, ProductWithTrans)
 {
-    Matrix<device<float>> mat1(2, 3);
+    TBBMatrix<float> mat1(2, 3);
     mat1 = 1, 2, 3, 4, 5, 6;
     auto mat2 = mat1.transpose();
 
-    Matrix<device<float>> mat_ans(2, 2);
+    TBBMatrix<float> mat_ans(2, 2);
     mat_ans = 14, 32, 32, 77;
 
     auto mat_prod = mat1 * mat2;
@@ -283,14 +281,14 @@ TEST(Matrix, ProductWithTrans)
 
 TEST(Matrix, ProductShape)
 {
-    Matrix<device<float>> mat1(2, 3);
+    TBBMatrix<float> mat1(2, 3);
     mat1 = 1, 2, 3, 4, 5, 6;
 
-    Matrix<device<float>> mat2(3, 1);
+    TBBMatrix<float> mat2(3, 1);
     mat2 = 1, 2, 3;
 
 
-    Matrix<device<float>> mat_ans(2, 1);
+    TBBMatrix<float> mat_ans(2, 1);
     mat_ans = 14, 32;
 
     auto mat_prod = mat1 * mat2;
@@ -301,26 +299,25 @@ TEST(Matrix, ProductShape)
 
 }
 
-
-TEST(Matrix, BigProductSingle)
+TEST(Matrix, BigProductSingleTBB)
 {
-    int M = 1000;
-    int N = 1000;
-    int K = 1000;
-    Matrix<host<float>> hmat1(M, N);
-    Matrix<host<float>> hmat2(N, K);
+    int M = 200;
+    int N = 200;
+    int K = 200;
+    TBBMatrix<float> hmat1(M, N);
+    TBBMatrix<float> hmat2(N, K);
     for (int r = 0; r < M; ++r) {
         for (int c = 0; c < N; ++c) {
-            hmat1.setat(r, c, r + c);
+            hmat1.setat(r, c, (r + c)/1000);
         }
     }
     for (int r = 0; r < N; ++r) {
         for (int c = 0; c < K; ++c) {
-            hmat2.setat(r, c, r + c);
+            hmat2.setat(r, c, (r + c)/1000);
         }
     }
     // Manual Matrix mult
-    Matrix<host<float>> hmat_ans(M, K);
+    TBBMatrix<float> hmat_ans(M, K);
     hmat_ans = 0;
     for (int r = 0; r < M; ++r) {
         for (int c = 0; c < K; ++c) {
@@ -329,48 +326,7 @@ TEST(Matrix, BigProductSingle)
             }
         }
     }
-    Matrix<device<float>> mat1{hmat1};
-    Matrix<device<float>> mat2{hmat2};
-    auto mat_prod = mat1 * mat2;
-    Matrix<host<float>> hmat_prod = mat_prod;
-
-    EXPECT_EQ(hmat_prod, hmat_ans);
-    EXPECT_EQ(hmat_ans.nR(), hmat_prod.nR());
-    EXPECT_EQ(hmat_ans.nC(), hmat_prod.nC());
-
-}
-
-TEST(Matrix, BigProductDouble)
-{
-    int M = 1000;
-    int N = 1000;
-    int K = 1000;
-    Matrix<host<double>> hmat1(M, N);
-    Matrix<host<double>> hmat2(N, K);
-    for (int r = 0; r < M; ++r) {
-        for (int c = 0; c < N; ++c) {
-            hmat1.setat(r, c, r + c);
-        }
-    }
-    for (int r = 0; r < N; ++r) {
-        for (int c = 0; c < K; ++c) {
-            hmat2.setat(r, c, r + c);
-        }
-    }
-    // Manual Matrix mult
-    Matrix<host<double>> hmat_ans(M, K);
-    hmat_ans = 0;
-    for (int r = 0; r < M; ++r) {
-        for (int c = 0; c < K; ++c) {
-            for (int el = 0; el < N; ++el) {
-                hmat_ans.setat(r, c, hmat_ans(r,c) + hmat1(r, el) * hmat2(el, c));
-            }
-        }
-    }
-    Matrix<device<double>> mat1{hmat1};
-    Matrix<device<double>> mat2{hmat2};
-    auto mat_prod = mat1 * mat2;
-    Matrix<host<double>> hmat_prod = mat_prod;
+    auto hmat_prod = hmat1 * hmat2;
 
     EXPECT_EQ(hmat_prod, hmat_ans);
     EXPECT_EQ(hmat_ans.nR(), hmat_prod.nR());
@@ -380,11 +336,11 @@ TEST(Matrix, BigProductDouble)
 
 TEST(Matrix, Reshape)
 {
-    Matrix<device<float>> mat1(2, 3);
+    TBBMatrix<float> mat1(2, 3);
     mat1 = 1, 2, 3, 
            4, 5, 6;
 
-    Matrix<device<float>> mat2(3, 2);
+    TBBMatrix<float> mat2(3, 2);
     mat2 = 1, 5,
            4, 3,
            2, 6;
@@ -394,10 +350,10 @@ TEST(Matrix, Reshape)
 
 TEST(Matrix, TransposeReshape)
 {
-    Matrix<device<float>> mat(2, 3);
+    TBBMatrix<float> mat(2, 3);
     mat = 1, 3, 4, 5, 7, 9;
 
-    Matrix<device<float>> ans(2, 3);
+    TBBMatrix<float> ans(2, 3);
     ans = 1, 4, 7, 3, 5, 9;
 
     auto mat_trans = mat.transpose();
@@ -408,10 +364,10 @@ TEST(Matrix, TransposeReshape)
 
 TEST(Matrix, ReshapeTranspose)
 {
-    Matrix<device<float>> mat(2, 3);
+    TBBMatrix<float> mat(2, 3);
     mat = 1, 3, 4, 5, 7, 9;
 
-    Matrix<device<float>> ans(2, 3);
+    TBBMatrix<float> ans(2, 3);
     ans = 1, 5, 3, 7, 4, 9;
 
     auto mat_trans = mat.reshape(3, 2).transpose();
@@ -421,10 +377,10 @@ TEST(Matrix, ReshapeTranspose)
 
 TEST(Matrix, TransposeReshapeTranspose)
 {
-    Matrix<device<float>> mat(2, 3);
+    TBBMatrix<float> mat(2, 3);
     mat = 1, 3, 4, 5, 7, 9;
 
-    Matrix<device<float>> ans(3, 2);
+    TBBMatrix<float> ans(3, 2);
     ans = 1, 3, 4, 5, 7, 9;
 
     auto mat_trans = mat.transpose().reshape(2, 3).transpose();
@@ -434,10 +390,10 @@ TEST(Matrix, TransposeReshapeTranspose)
 
 TEST(Matrix, ReshapeTransposeReshape)
 {
-    Matrix<device<float>> mat(2, 3);
+    TBBMatrix<float> mat(2, 3);
     mat = 1, 3, 4, 5, 7, 9;
 
-    Matrix<device<float>> ans(2, 3);
+    TBBMatrix<float> ans(2, 3);
     ans = 1, 4, 7, 3, 5 ,9;
 
     auto mat_trans = mat.reshape(2, 3).transpose().reshape(2, 3);
@@ -447,26 +403,26 @@ TEST(Matrix, ReshapeTransposeReshape)
 
 TEST(Matrix, TraceEqual)
 {
-    Matrix<device<float>> mat(2, 2);
+    TBBMatrix<float> mat(2, 2);
     mat = 1, 2, 3, 4;
     EXPECT_EQ(mat.trace(), 5);
 }
 TEST(Matrix, TraceTall)
 {
-    Matrix<device<float>> mat(3, 2);
+    TBBMatrix<float> mat(3, 2);
     mat = 1, 2, 3, 4, 5, 6;
     EXPECT_EQ(mat.trace(), 5);
 }
 TEST(Matrix, TraceWide)
 {
-    Matrix<device<float>> mat(2, 3);
+    TBBMatrix<float> mat(2, 3);
     mat = 1, 2, 3, 4, 5, 6;
     EXPECT_EQ(mat.trace(), 6);
 }
-
 int main(int argc, char **argv)
 {
     std::cout << "Running test" << std::endl;
     ::testing::InitGoogleTest(&argc, argv);
+
     return RUN_ALL_TESTS();
 }
