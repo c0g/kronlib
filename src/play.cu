@@ -5,9 +5,9 @@
 using namespace kronlib;
 
 int main() {
-    TBBMatrix<float> tbb(1000, 1000);
-    CUDAMatrix<float> cuda(1000, 1000);
-    HostMatrix<float> host(1000, 1000);
+    TBBMatrix<float> tbb(3000, 3000);
+    CUDAMatrix<float> cuda(3000, 3000);
+    HostMatrix<float> host(3000, 3000);
 
     dlib::timing::start(1, "tbb");
     auto tbbp = tbb * tbb.transpose();

@@ -13,7 +13,9 @@
 
 #include <cuda_runtime.h>
 #include <cublas_v2.h>
+#ifdef CUSOLVER
 #include <cusolverDn.h>
+#endif
 
 
 namespace kronlib {
@@ -76,7 +78,7 @@ namespace kronlib {
                     cublasDestroy(blas);
                     cudaFree(devMemory);
                 }
-                thrust::system::cuda::detail::execute_on_stream exec() const { return thrust::cuda::par.on(stream); }
+                thrust::system::cuda::detail::par_t exec() const { return thrust::cuda::par; }
                 T * one() { return &devMemory[1]; };
                 T * zero() { return &devMemory[0]; };
         };
