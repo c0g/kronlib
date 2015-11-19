@@ -1,6 +1,21 @@
 #include <functional>
 #include <cmath>
+#include <limits>
 
+
+template <typename T>
+struct tol_equal : public std::binary_function<T, T, bool>
+{
+
+    T tol;
+    __host__ __device__
+        tol_equal(T tol) : tol{tol} {}
+    __host__ __device__
+    bool operator()(T lhs, T rhs)
+    {
+        return std::abs(lhs - rhs) <= tol;
+    }
+};
 
 template <typename T>
 struct div_by : public std::unary_function<T, T>

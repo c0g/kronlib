@@ -43,4 +43,15 @@ cublasOperation_t cublasTranspose(BlasTranspose trans) {
     }
 }
 
+cublasFillMode_t cublasFillMode(char UPLO) {
+    switch (UPLO) {
+        case 'L': 
+            return CUBLAS_FILL_MODE_LOWER;
+        case 'U':
+            return CUBLAS_FILL_MODE_UPPER;
+        default:
+            return CUBLAS_FILL_MODE_LOWER;
+    }
+}
+
 #endif

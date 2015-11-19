@@ -27,9 +27,6 @@ template<typename Backend>
 class Matrix;
 
 template<typename Backend>
-class Cholesky;
-
-template<typename Backend>
 class KroneckerMatrix;
 
 /*
@@ -43,12 +40,11 @@ Matrix<Backend, T> exp(const Matrix<T, Storage> &);
 
 template<typename Backend>
 class Matrix  {
-    using Storage = typename Backend::Storage;
 	using T = typename Backend::Storage::value_type;
     friend KroneckerMatrix<Backend>;
     //friend KroneckerVectorStack<Backend, T>;
-    friend Cholesky<Backend>;
 public:
+    using Storage = typename Backend::Storage;
     Matrix(std::shared_ptr<Backend> context_, Storage data_, size_t r_,size_t c_) : context{context_}, data{data_}, nr{r_}, nc{c_} {}
     Matrix(size_t r_, size_t c_) : Matrix(std::make_shared<Backend>(), Storage(r_ * c_), r_, c_) {}
     template <typename OtherBackend>
@@ -194,8 +190,18 @@ public:
         assert(nR() == other.nR());
         assert(nC() == other.nC());
         bool init = true;
-        return thrust::inner_product(context->exec(), data.begin(), data.end(), other.getConstData().begin(), init, and_reduce(), thrust::equal_to<T>());
+        auto ans = thrust::inner_product(context->exec(), data.begin(), data.end(), other.getConstData().begin(), init, and_reduce(), thrust::equal_to<T>());
+        return ans;
     }
+    bool tol_eq(const Matrix & other, T tol) const
+    {
+        assert(nR() == other.nR());
+        assert(nC() == other.nC());
+        bool init = true;
+        auto ans = thrust::inner_product(context->exec(), data.begin(), data.end(), other.getConstData().begin(), init, and_reduce(), tol_equal<T>(tol));
+        return ans;
+    }
+
 
     bool operator!=(const Matrix & other) const
     {
@@ -319,10 +325,6 @@ public:
         thrust::transform(context->exec(), data.begin(), data.end(), data.begin(), exponentiate<T>()); 
     }
 
-    Matrix<Backend> solve(const Matrix<Storage> & other)
-    {
-        return *this;
-    }
     void apply_lambda();
     // defined in kronecker Matrix;
     // Matrix<Backend> Matrix<Storage>::operator*(const KroneckerMatrix<Storage> &other);

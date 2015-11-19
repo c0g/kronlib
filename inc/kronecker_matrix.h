@@ -7,67 +7,63 @@
 
 #include <vector>
 #include <deque>
-#include "matrix.h"
-#include "static_functions.h"
-#include "util.h"
+#include "kronlib.h"
 
-
+namespace kronlib {
 
 //template <typename T>
 //class KroneckerVectorStack;
 
-template <typename Storage>
-class KroneckerMatrix  {
-    friend Matrix<Storage>;
-//    friend KroneckerVectorStack<T>;
-
-public:
-
-
+template <typename MatrixType>
+class Kronecker  {
 private:
+    std::vector<MatrixType> subMatrices;
 public:
-    KroneckerMatrix(const std::vector<Matrix<Storage>> &sub_matrices) : sub_matrices(sub_matrices) { }
-    KroneckerMatrix() {}
+    Kronecker(const std::vector<MatrixType> &subMatrices) : subMatrices{subMatrices} { }
+    Kronecker() {}
 
-private:
-    std::vector<Matrix<Storage>> sub_matrices;
-public:
+    typename std::vector<MatrixType>::size_type dim() const { return subMatrices.size(); }
 
-    void push_matrix(const Matrix<Storage> & mat)
+    const std::vector<MatrixType> & getSubMatrices() const 
     {
-        sub_matrices.push_back(mat);
+        return subMatrices;
     }
 
-    KroneckerMatrix<Storage> operator*(const KroneckerMatrix<Storage> & other) const
+    std::vector<MatrixType> & getMutableSubMatrices()
     {
-        auto newsub_matrices = kronmat_dot_kronmat(sub_matrices, other.sub_matrices);
-        return KroneckerMatrix(newsub_matrices);
+        return subMatrices;
+    }
+
+    void push(const MatrixType & mat)
+    {
+        subMatrices.push_back(mat);
+    }
+
+    Kronecker<MatrixType> operator*(const Kronecker<MatrixType> & other) const
+    {
+        auto newsubMatrices = kronmat_dot_kronmat(subMatrices, other.subMatrices);
+        return Kronecker(newsubMatrices);
     }
 
     /*
     KroneckerVectorStack<T> operator*(const KroneckerVectorStack<T> & other) const
     {
         assert(other.isTrans()); // kronecker dimensions need to line up
-        auto newsub_matrices = kronmat_dot_kronmat(sub_matrices, other.sub_matrices);
-        KroneckerVectorStack<T> ans(newsub_matrices);
+        auto newsubMatrices = kronmat_dot_kronmat(subMatrices, other.subMatrices);
+        KroneckerVectorStack<T> ans(newsubMatrices);
         return ans.transpose();
     }
     */
-    Matrix<Storage> solve(const Matrix<Storage> & other) const
+    MatrixType operator*(const MatrixType & other) const
     {
         assert(other.nC() == 1 && "The full Matrix can only be a column vector");
-        return kronmat_solve_fullvec(sub_matrices, other);
-    }
-    Matrix<Storage> operator*(const Matrix<Storage> & other) const
-    {
-        assert(other.nC() == 1 && "The full Matrix can only be a column vector");
-        return kronmat_dot_fullvec(sub_matrices, other);
+        return kronmat_dot_fullvec(subMatrices, other);
     }
 
     long nR() const
     {
         long rows = 1;
-        for (auto m : sub_matrices) {
+        for (auto m : subMatrices) {
             rows *= m.nR();
         }
         return rows;
@@ -75,50 +71,91 @@ public:
     long nC() const
     {
         long cols = 1;
-        for (auto m : sub_matrices) {
+        for (auto m : subMatrices) {
             cols *= m.nC();
         }
         return cols;
     }
 
-    Matrix<Storage> full() const 
+    MatrixType full() const 
     {
-        auto ans = kron_full(sub_matrices);
+        auto ans = kron_full(subMatrices);
         return ans;
 
     }
 
-    KroneckerMatrix transpose() const
+    Kronecker transpose() const
     {
-        KroneckerMatrix<Storage> ans;
-        for (const auto & m : sub_matrices)
+        Kronecker<MatrixType> ans;
+        for (const auto & m : subMatrices)
         {
-            ans.push_matrix(m.transpose());
+            ans.push(m.transpose());
         }
         return ans;
     }
 
-    bool operator==(const KroneckerMatrix<Storage> & other) const
+    bool operator==(const Kronecker<MatrixType> & other) const
     {
         bool match = true;
-        assert(sub_matrices.size() == other.sub_matrices.size());
-        for (size_t idx = 0; idx < sub_matrices.size(); ++idx) {
-            match &= (sub_matrices[idx] == other.sub_matrices[idx]);
+        assert(subMatrices.size() == other.subMatrices.size());
+        for (size_t idx = 0; idx < subMatrices.size(); ++idx) {
+            match &= (subMatrices[idx] == other.subMatrices[idx]);
         }
         return match;
     }
     void print_submatrices(std::ostream & out) const
     {
         int matnum = 1;
-        for (auto m : sub_matrices) {
+        for (auto m : subMatrices) {
             out << "SubMatrix: " << matnum++ << std::endl;
             out << m << std::endl;
         }
     }
 };
-template <typename Storage>
+
+
+template <typename MatrixType>
+class Kronecker<Cholesky<MatrixType>>  {
+private:
+    std::vector<Cholesky<MatrixType>> subChols;
+public:
+    Kronecker(const std::vector<Cholesky<MatrixType>> &subMatrices) 
+    {
+        for (const auto & mat : subMatrices) { push(mat); }
+    }
+    explicit Kronecker(const Kronecker<MatrixType> & kronMat) : Kronecker{ kronMat.getSubMatrices } { }
+    Kronecker() {}
+    typename std::vector<Cholesky<MatrixType>>::size_type dim() const { return subChols.size(); }
+    void push(const Cholesky<MatrixType> & chol) { subChols.push_back(chol); } 
+
+    Kronecker<MatrixType> solve(const Kronecker<MatrixType> & other) 
+    {
+        Kronecker<MatrixType> ans;
+        assert(dim() == other.dim());
+        auto chol_it = std::begin(subChols);
+        auto mat_it = std::begin(other.getSubMatrices());
+        auto mat_end = std::end(other.getSubMatrices());
+        for (/* chol_it and mat_it */ ; 
+                (chol_it < subChols.end()) && (mat_it < mat_end); 
+                ++chol_it, ++mat_it) 
+        {
+            ans.push( chol_it->solve( *mat_it ));
+        }
+        return ans;
+    }
+    MatrixType solve(const MatrixType & other)
+    {
+        assert(other.nC() == 1); // Matrix must be a column vector
+        return kronchol_solve_fullvec(subChols, other);
+    }
+
+
+};
+
+
+template <typename MatrixType>
 std::ostream& operator<< (
-    std::ostream& out, KroneckerMatrix<Storage> K
+    std::ostream& out, Kronecker<MatrixType> K
 ) 
 {
     K.print_submatrices(out);
@@ -128,9 +165,9 @@ std::ostream& operator<< (
 
 
 // template <typename T>
-// Matrix<T> Matrix<T>::operator*(const KroneckerMatrix<T> &other) {
+// Matrix<T> Matrix<T>::operator*(const Kronecker<T> &other) {
 
-// //     KroneckerMatrix has the operator kron_mat * Matrix
+// //     Kronecker has the operator kron_mat * Matrix
 // //     we can use that by noting:
 // //         a * b = (b' * a')'
 
@@ -142,5 +179,7 @@ std::ostream& operator<< (
 //     mutable_transpose();
 //     return ans;
 // }
-
+};
 #endif //KRONMAT_KRONMAT_H
+
+

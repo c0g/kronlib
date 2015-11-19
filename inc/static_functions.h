@@ -8,17 +8,15 @@
 #include <vector>
 #include "matrix.h"
 #include <deque>
-#include "kronvecstack.h"
-#include "cholesky.h"
 #include <thrust/functional.h>
 
-
-template <typename T>
-std::vector<Matrix<T>> kronmat_dot_kronmat (
-                        const std::vector<Matrix<T>> & M1, const std::vector<Matrix<T>> & M2
+namespace kronlib {
+template <typename Matrix>
+std::vector<Matrix> kronmat_dot_kronmat (
+                        const std::vector<Matrix> & M1, const std::vector<Matrix> & M2
                     )
 {
-    std::vector<Matrix<T>> ans;
+    std::vector<Matrix> ans;
     assert(M1.size() == M2.size());
     for (int i = 0; i < M1.size(); ++i) {
         ans.push_back(M1[i] * M2[i]);
@@ -26,12 +24,12 @@ std::vector<Matrix<T>> kronmat_dot_kronmat (
     return ans;
 }
 
-template <typename Storage>
-Matrix<Storage> kronmat_dot_fullvec ( const std::vector<Matrix<Storage>> & K, const Matrix<Storage> & V )
+template <typename Matrix>
+Matrix kronmat_dot_fullvec ( const std::vector<Matrix> & K, const Matrix & V )
 {
     assert(V.nC() == 1);
     size_t nmats = K.size();
-    Matrix<Storage> x = V;
+    Matrix x = V;
 
     for (int n = nmats - 1; n > -1; --n) {
         size_t thisC = K[n].nC();
@@ -41,25 +39,24 @@ Matrix<Storage> kronmat_dot_fullvec ( const std::vector<Matrix<Storage>> & K, co
     }
     return x;
 }
-template <typename Storage>
-Matrix<Storage> kronmat_solve_fullvec ( const std::vector<Matrix<Storage>> & K, const Matrix<Storage> & V )
+template <typename Matrix>
+Matrix kronchol_solve_fullvec ( const std::vector<Cholesky<Matrix>> & L, const Matrix & V )
 {
     assert(V.nC() == 1);
-    size_t nmats = K.size();
-    Matrix<Storage> x = V;
+    auto nmats = L.size();
+    Matrix x = V;
 
     for (int n = nmats - 1; n > -1; --n) {
-        size_t thisC = K[n].nC();
-        size_t xSize = x.nR() * x.nC();
-        x = x.reshape(thisC, xSize / thisC);
-        Cholesky<Storage> Ln(K[n]);
-        x = (Ln.solve(x)).transpose().reshape(xSize, 1);
+        auto thisN = L[n].N();
+        auto xSize = x.nR() * x.nC();
+        x = x.reshape(thisN, xSize / thisN);
+        x = (L.at(n).solve(x)).transpose().reshape(xSize, 1);
     }
     return x;
 }
-template <typename Storage>
-Matrix<Storage> kron_full(
-    const std::vector<Matrix<Storage>> & K
+template <typename Matrix>
+Matrix kron_full(
+    const std::vector<Matrix> & K
 )
 {
     size_t nr = 1;
@@ -69,7 +66,7 @@ Matrix<Storage> kron_full(
         nr *= K[i].nR();
         nc *= K[i].nC();
     }
-    Matrix<Storage> full_mat(nr, nc);
+    Matrix full_mat(nr, nc);
     full_mat = 1;
 
     size_t row_acc = 1;
@@ -87,7 +84,7 @@ Matrix<Storage> kron_full(
         rowstrides.push_front(row_acc);
         colstrides.push_front(col_acc);
     }
-    Storage & target = full_mat.getMutableData();
+    auto & target = full_mat.getMutableData();
     thrust::fill(target.begin(), target.end(), 1);
     thrust::counting_iterator<size_t> idx_start(0);
     for (size_t d = 0; d < nmats; ++d) 
@@ -95,13 +92,13 @@ Matrix<Storage> kron_full(
         kronecker_index idxer{row_acc, col_acc, K[d].nR(), K[d].nC(), rowstrides[d], rowstrides[d+1], colstrides[d], colstrides[d+1]};
         auto submat_idx = thrust::make_transform_iterator(idx_start, idxer);
         auto submat_shuffle = thrust::make_permutation_iterator(K[d].getConstData().begin(), submat_idx);
-        thrust::transform(target.begin(), target.end(), submat_shuffle, target.begin(), thrust::multiplies<typename Storage::value_type>());
+        thrust::transform(target.begin(), target.end(), submat_shuffle, target.begin(), thrust::multiplies<typename Matrix::Storage::value_type>());
     }
     return full_mat;
 }
 /*
-template <typename T>
-Matrix<T> kvs_full( const std::vector<Matrix<T>> & KVS,
+template <typename Matrix>
+Matrix kvs_full( const std::vector<Matrix> & KVS,
                     size_t start, size_t end)
 {
     size_t nr = end - start;
@@ -110,7 +107,7 @@ Matrix<T> kvs_full( const std::vector<Matrix<T>> & KVS,
     for (int i = 0; i < nmats; ++i) {
         nc *= KVS[i].nC();
     }
-    Matrix<T> full_mat(nr, nc);
+    Matrix full_mat(nr, nc);
     full_mat = 1;
 
     size_t col_acc = 1;
@@ -133,14 +130,15 @@ Matrix<T> kvs_full( const std::vector<Matrix<T>> & KVS,
     return full_mat;
 }
 */
-template <typename T>
-Matrix<T> kvs_full(const std::vector<Matrix<T>> & KVS)
+template <typename Matrix>
+Matrix kvs_full(const std::vector<Matrix> & KVS)
 {
     return kvs_full(KVS, 0, KVS[0].nR());
 }
 
-template <typename T>
-Matrix<T> vec_dot_kvs(const Matrix<T> & m, const KroneckerVectorStack<T> & kvs)
+/*
+template <typename Matrix>
+Matrix vec_dot_kvs(const Matrix & m, const KroneckerVectorStack<T> & kvs)
 {
     assert(m.nR() == 1 && "Must be row vector");
     std::vector<size_t> shapes_mut;
@@ -193,9 +191,9 @@ Matrix<T> vec_dot_kvs(const Matrix<T> & m, const KroneckerVectorStack<T> & kvs)
                  data.data(), 1,
                  kroned_vecs.data(), shapes[kvs_dim - 1]);
     }
-    return Matrix<T>(kroned_vecs, final_r, final_c);
+    return Matrix(kroned_vecs, final_r, final_c);
 }
-
+*/
 /*
 template <typename T>
 std::vector<T> kvs_dot_vec(const basic_kvs<T> & kvs, const std::vector<T> & vec) {
@@ -252,4 +250,5 @@ std::vector<T> kvs_dot_vec(const basic_kvs<T> & kvs, const std::vector<T> & vec)
 }
 */
 
+}
 #endif //KRONMAT_STATIC_FUNCTIONS_H

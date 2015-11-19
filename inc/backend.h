@@ -53,6 +53,14 @@ namespace kronlib {
                 cublasHandle_t blas;
 #ifdef CUSOLVER
                 cusolverDnHandle_t solver;
+                int * minor;
+#endif
+#ifdef CUSOLVER
+                int getMinor() {
+                    int hminor;
+                    cudaMemcpy(&hminor, minor, sizeof(int) * 1, cudaMemcpyDeviceToHost); 
+                    return hminor;
+                }
 #endif
 
                 using Storage = thrust::system::cuda::vector<T>;
@@ -61,6 +69,7 @@ namespace kronlib {
                     T vals[2];
                     vals[0] = 0; vals[1] = 1;
                     cudaMalloc(&devMemory, sizeof(T) * 2);
+                    cudaMalloc(&minor, sizeof(int) * 1);
                     cudaMemcpy(devMemory, vals, sizeof(T) * 2, cudaMemcpyHostToDevice);
                     cublasCreate(&blas);
                     cublasSetStream(blas, stream);
@@ -74,6 +83,7 @@ namespace kronlib {
                 ~CUDAContext() {
 #ifdef CUSOLVER
                     cusolverDnDestroy(solver);
+                    cudaFree(minor);
 #endif
                     cublasDestroy(blas);
                     cudaFree(devMemory);

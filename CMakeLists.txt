@@ -12,6 +12,7 @@ include("test/gtest.cmake")
 find_package(OpenBLAS)
 find_package(CUDA)
 find_package(TBB)
+find_package(Boost)
 message("CUDA version ${CUDA_VERSION}")
 set(CUSOLVER_LIBRARY, "")
 if(${CUDA_VERSION} LESS 7) 
@@ -27,7 +28,7 @@ endif()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3") 
 
 # Includes
-include_directories(${CUDA_INCLUDE_DIRS} ${OpenBLAS_INCLUDE_DIR} ${GTEST_INCLUDE_DIR} thrust src inc)
+include_directories(${CUDA_INCLUDE_DIRS} ${OpenBLAS_INCLUDE_DIR} ${GTEST_INCLUDE_DIR} ${Boost_INCLUDE_DIRS} thrust src inc)
 
 ## Source files for executable
 set(SOURCE_FILES src/play.cu)
@@ -65,16 +66,22 @@ if(CUDA_FOUND)
 endif()
 
 if(CUDA_FOUND)
-	CUDA_ADD_EXECUTABLE(chol_test test/testchol.cu)
-	CUDA_ADD_CUBLAS_TO_TARGET(chol_test)
-    target_link_libraries(chol_test ${OpenBLAS_LIB}  ${TBB_LIBRARY} ${GTEST_LIBRARY} ${CUDA_LIBRARIES} dlib)
+    CUDA_ADD_EXECUTABLE(TestCUDAChol test/TestCUDAChol.cu)
+    CUDA_ADD_CUBLAS_TO_TARGET(TestCUDAChol)
+    target_link_libraries(TestCUDAChol ${OpenBLAS_LIB}  ${TBB_LIBRARY} ${GTEST_LIBRARY} ${CUDA_LIBRARIES} dlib)
 endif()
 
 if(CUDA_FOUND)
-	CUDA_ADD_EXECUTABLE(kron_test test/testkron.cu)
-	CUDA_ADD_CUBLAS_TO_TARGET(kron_test)
-    target_link_libraries(kron_test ${OpenBLAS_LIB}  ${TBB_LIBRARY} ${GTEST_LIBRARY} ${CUDA_LIBRARIES} dlib)
-    add_test(kron_test kron_test)
+    CUDA_ADD_EXECUTABLE(TestHostChol test/TestHostChol.cu)
+    CUDA_ADD_CUBLAS_TO_TARGET(TestHostChol)
+    target_link_libraries(TestHostChol ${OpenBLAS_LIB}  ${TBB_LIBRARY} ${GTEST_LIBRARY} ${CUDA_LIBRARIES} dlib)
+endif()
+
+if(CUDA_FOUND)
+    CUDA_ADD_EXECUTABLE(TestHostKron test/TestHostKron.cu)
+    CUDA_ADD_CUBLAS_TO_TARGET(TestHostKron)
+    target_link_libraries(TestHostKron ${OpenBLAS_LIB}  ${TBB_LIBRARY} ${GTEST_LIBRARY} ${Host_LIBRARIES} dlib)
+    add_test(TestHostKron TestHostKron)
 endif()
 
 if(FALSE) # fake multiline comment

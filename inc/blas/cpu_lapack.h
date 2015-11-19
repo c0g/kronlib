@@ -10,6 +10,7 @@
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
 
+
 inline void LAPACKE_potrf(int order, char UPLO, int N, float * a, int lda) {
     LAPACKE_spotrf(order, UPLO, N, a, lda);
 }
@@ -18,7 +19,8 @@ inline void LAPACKE_potrf(int order, char UPLO, int N, double * a, int lda) {
     LAPACKE_dpotrf(order, UPLO, N, a, lda);
 }
 template <typename Storage, typename Handle> //handle used for CUDA versions
-inline void potrf(Handle, int order, char UPLO, int N, Storage & a, int lda) {
+void potrf(Handle, int order, char UPLO, int N, Storage & a, int lda) {
+    std::cout << "In CPU potrf" << std::endl;
     using T = typename Storage::value_type;
     T * aptr = thrust::raw_pointer_cast(a.data());
     LAPACKE_potrf(order, UPLO, N, aptr, lda);

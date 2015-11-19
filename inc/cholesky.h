@@ -6,40 +6,38 @@
 #define KRONMAT_CHOLESKY_H
 
 #include <vector>
+#include "blas/blas.h"
+#include "kronlib.h"
 #include "matrix.h"
 #include <thrust/copy.h>
+#include <thrust/iterator/counting_iterator.h>
 
-template <typename Storage>
+template <typename Matrix>
 class Cholesky {
+    using Storage = typename Matrix::Storage;
     using T = typename Storage::value_type;
 public:
     Storage L;
     size_t n;
+    const Matrix matrix;
 public:
-    Cholesky(const Matrix<Storage> & mat) {
-        assert(mat.nR() == mat.nC());
-        n = mat.nR();
-        L = mat.getConstData();
-        potrf(CblasColMajor, 'L', n, L, n);
+    Cholesky(const Matrix & mat) : n{mat.nR()}, matrix{mat} {
+        L = matrix.getConstData();
+        potrf(matrix.getContext(), CblasColMajor, 'L', n, L, n);
+        thrust::counting_iterator<size_t> idx{0};
+        zero_if_not_lower_triangular<T> zinlt{n};
+        thrust::transform(idx, idx + n*n, L.begin(), L.begin(), zinlt);
     }
-    /*
-    Matrix<Storage> inv() const { 
-        Matrix<Storage> ans{L, n, n};
-        potri(CblasColMajor, 'L', n, ans.data.data(), n);
-        //Fill upper triangle
-        for (int r = 1; r < n; ++r) {
-            for (int c = 0; c < r; ++c) {
-                ans(c, r) = ans(r, c);
-            }
-        }
+    Matrix inv() const{
+        Matrix ans = cholmat();
+        potri(matrix.getContext(), CblasColMajor, 'L', n, ans.getMutableData(), n);
         return ans;
-    };
-    */
-    Matrix<Storage> solve(const Matrix<Storage> & other) const{
-        Matrix<Storage> ans = other;
+    }
+    Matrix solve(const Matrix & other) const{
+        Matrix ans = other;
         int n = other.nR();
         int m = other.nC();
-        potrs(CblasColMajor, 'L', n, m, L, n, ans.getMutableData(), n);
+        potrs(matrix.getContext(), CblasColMajor, 'L', n, m, L, n, ans.getMutableData(), n);
         return ans;
     }
     T logdet() const {
@@ -50,31 +48,17 @@ public:
         T half_ld = thrust::reduce(log_diags, log_diags + n);
         return 2 * half_ld;
     }
-    Matrix<Storage> cholmat() const {
-        // Initalize ans as a n,n matrix filled with L
-        Matrix<Storage> ans(L, n, n);
-        // zero if not lower triangular either returns the value if inside the lower triangle or 0
-        zero_if_not_lower_triangular<T> zinlt{n};
-        // provide counting iterator to give index
-        thrust::counting_iterator<size_t> idx(0);
-        thrust::transform(idx, idx + n*n, ans.getConstData().begin(), ans.getMutableData().begin(), zinlt);
-        return ans;
+    Matrix cholmat() const {
+        // Purpose is: return a matrix that is the lower triangular
+        return Matrix(matrix.getContext(), L, n, n);
+    }
+    Matrix operator*(const Matrix & other) {
+        return matrix * other;
     }
     long N() const {
         return n;
     }
+
 };
-
-template <typename Storage> 
-bool operator== (const Matrix<Storage> & mat, const Cholesky<Storage> & chol) {
-    assert(mat.nR() == mat.nC());
-    assert(mat.nR() == chol.N());
-    return chol.cholmat() == mat;
-}
-
-template <typename Storage> 
-bool operator== (const Cholesky<Storage> & chol, const Matrix<Storage> & mat) {
-    return (mat == chol);
-}
 
 #endif //KRONMAT_CHOLESKY_H
