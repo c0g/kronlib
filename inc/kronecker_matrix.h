@@ -45,7 +45,7 @@ public:
     KroneckerVectorStack<MatrixType> operator*(const KroneckerVectorStack<MatrixType> & other) const
     {
         auto newsubMatrices = kronmat_dot_kronmat(subMatrices, other.getSubMatrices());
-        return KroneckerVectorStack{newsubMatrices};
+        return KroneckerVectorStack<MatrixType>{newsubMatrices};
     }
     MatrixType operator*(const MatrixType & other) const
     {

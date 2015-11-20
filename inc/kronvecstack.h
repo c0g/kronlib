@@ -23,7 +23,7 @@ public:
         return sub_matrices;
     }
 
-    void add_dimension(const Matrix<T> & mat)
+    void add_dimension(const Matrix & mat)
     {
         sub_matrices.push_back(mat);
     }

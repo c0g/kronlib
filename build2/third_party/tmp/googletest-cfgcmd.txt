@@ -1,1 +1,0 @@
-cmd='/usr/local/Cellar/cmake/3.3.2/bin/cmake;-GUnix Makefiles;/Users/tom/Code/KronMat/build2/third_party/src/googletest'
