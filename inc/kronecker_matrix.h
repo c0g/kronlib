@@ -11,9 +11,6 @@
 
 namespace kronlib {
 
-//template <typename T>
-//class KroneckerVectorStack;
-
 template <typename MatrixType>
 class Kronecker  {
 private:
@@ -45,15 +42,11 @@ public:
         return Kronecker(newsubMatrices);
     }
 
-    /*
-    KroneckerVectorStack<T> operator*(const KroneckerVectorStack<T> & other) const
+    KroneckerVectorStack<MatrixType> operator*(const KroneckerVectorStack<MatrixType> & other) const
     {
-        assert(other.isTrans()); // kronecker dimensions need to line up
-        auto newsubMatrices = kronmat_dot_kronmat(subMatrices, other.subMatrices);
-        KroneckerVectorStack<T> ans(newsubMatrices);
-        return ans.transpose();
+        auto newsubMatrices = kronmat_dot_kronmat(subMatrices, other.getSubMatrices());
+        return KroneckerVectorStack{newsubMatrices};
     }
-    */
     MatrixType operator*(const MatrixType & other) const
     {
         assert(other.nC() == 1 && "The full Matrix can only be a column vector");

@@ -11,9 +11,9 @@ using namespace kronlib;
 
 TEST(KronMatrix, RowsAndColumn)
 {
-    TBBMatrix<float> mat1(2, 3);
-    TBBMatrix<float> mat2(2, 3);
-    Kronecker<TBBMatrix<float>> kron_mat;
+    CUDAMatrix<float> mat1(2, 3);
+    CUDAMatrix<float> mat2(2, 3);
+    Kronecker<CUDAMatrix<float>> kron_mat;
     kron_mat.push(mat1);
     kron_mat.push(mat2);
     EXPECT_EQ(mat1.nR() * mat2.nR(), kron_mat.nR());
@@ -22,15 +22,15 @@ TEST(KronMatrix, RowsAndColumn)
 
 TEST(KronMatrix, KronFull2)
 {
-    TBBMatrix<float> mat1(2, 2);
+    CUDAMatrix<float> mat1(2, 2);
     mat1 = 1, 2, 3, 4;
-    TBBMatrix<float> mat2(2, 2);
+    CUDAMatrix<float> mat2(2, 2);
     mat2 = 3, 4, 5, 6;
 
-    TBBMatrix<float> mat_ans(4, 4);
+    CUDAMatrix<float> mat_ans(4, 4);
     mat_ans = 3,  4,  6,  8,  5,  6, 10, 12,  9, 12, 12, 16, 15, 18, 20, 24;
 
-    Kronecker<TBBMatrix<float>> kron_mat;
+    Kronecker<CUDAMatrix<float>> kron_mat;
     kron_mat.push(mat1);
     kron_mat.push(mat2);
 
@@ -38,14 +38,14 @@ TEST(KronMatrix, KronFull2)
 }
 TEST(KronMatrix, KronFull3)
 {
-    TBBMatrix<float> mat1(2, 2);
+    CUDAMatrix<float> mat1(2, 2);
     mat1 = 1, 2, 3, 4;
-    TBBMatrix<float> mat2(2, 2);
+    CUDAMatrix<float> mat2(2, 2);
     mat2 = 3, 4, 5, 6;
-    TBBMatrix<float> mat3(2, 3);
+    CUDAMatrix<float> mat3(2, 3);
     mat3 = 3, 4, 5, 6, 7, 8;
 
-    TBBMatrix<float> mat_ans(8, 12);
+    CUDAMatrix<float> mat_ans(8, 12);
     mat_ans = 9,  12,  15,  12,  16,  20,  18,  24,  30,  24,  32,  40,  18,
     21,  24,  24,  28,  32,  36,  42,  48,  48,  56,  64,  15,  20,
     25,  18,  24,  30,  30,  40,  50,  36,  48,  60,  30,  35,  40,
@@ -55,7 +55,7 @@ TEST(KronMatrix, KronFull3)
     60,  80, 100,  72,  96, 120,  90, 105, 120, 108, 126, 144, 120,
     140, 160, 144, 168, 192;
 
-    Kronecker<TBBMatrix<float>> kron_mat;
+    Kronecker<CUDAMatrix<float>> kron_mat;
     kron_mat.push(mat1);
     kron_mat.push(mat2);
     kron_mat.push(mat3);
@@ -65,27 +65,27 @@ TEST(KronMatrix, KronFull3)
 
 TEST(KronMatrix, KronDotKron)
 {
-    TBBMatrix<float> mat1a(2, 2);
+    CUDAMatrix<float> mat1a(2, 2);
     mat1a = 1, 2, 3, 4;
-    TBBMatrix<float> mat2a(2, 2);
+    CUDAMatrix<float> mat2a(2, 2);
     mat2a = 3, 4, 5, 6;
 
-    Kronecker<TBBMatrix<float>> kron_mat1;
+    Kronecker<CUDAMatrix<float>> kron_mat1;
     kron_mat1.push(mat1a);
     kron_mat1.push(mat2a);
 
-    TBBMatrix<float> mat1b(2, 2);
+    CUDAMatrix<float> mat1b(2, 2);
     mat1b = 3, 4, 5, 6;
-    TBBMatrix<float> mat2b(2, 2);
+    CUDAMatrix<float> mat2b(2, 2);
     mat2b = 4, 5, 6, 7;
 
-    Kronecker<TBBMatrix<float>> kron_mat2;
+    Kronecker<CUDAMatrix<float>> kron_mat2;
     kron_mat2.push(mat1b);
     kron_mat2.push(mat2b);
 
     auto kron_mat = kron_mat1 * kron_mat2;
 
-    TBBMatrix<float> mat_ans(4, 4);
+    CUDAMatrix<float> mat_ans(4, 4);
     mat_ans = 468,  559,  576,  688,  728,  871,  896, 1072, 1044, 1247, 1296,
     1548, 1624, 1943, 2016, 2412;
 
@@ -94,38 +94,38 @@ TEST(KronMatrix, KronDotKron)
 
 TEST(KronMatrix, KronDotFullVec)
 {
-    TBBMatrix<float> mat1(2, 2);
+    CUDAMatrix<float> mat1(2, 2);
     mat1 = 1, 2, 3, 4;
-    TBBMatrix<float> mat2(2, 2);
+    CUDAMatrix<float> mat2(2, 2);
     mat2 = 3, 4, 5, 6;
 
-    Kronecker<TBBMatrix<float>> kmat;
+    Kronecker<CUDAMatrix<float>> kmat;
     kmat.push(mat1);
     kmat.push(mat2);
 
-    TBBMatrix<float> dot_with(4,1);
+    CUDAMatrix<float> dot_with(4,1);
     dot_with = 0, 1, 2, 3;
 
-    TBBMatrix<float> ans(4,1);
+    CUDAMatrix<float> ans(4,1);
     ans = 40, 62, 84, 130;
     EXPECT_EQ(kmat * dot_with, ans);
 }
 
 TEST(KronMatrix, KronSolveFullVec)
 {
-    TBBMatrix<double> mat1(2, 2);
+    CUDAMatrix<double> mat1(2, 2);
     mat1 = 1, 2, 3, 4;
     mat1 = mat1.transpose() * mat1;
-    TBBMatrix<double> mat2(2, 2);
+    CUDAMatrix<double> mat2(2, 2);
     mat2 = 3, 4, 5, 6;
     mat2 = mat2.transpose() * mat2;
     
-    Kronecker<TBBMatrix<double>> kmat{ {mat1, mat2} };
-    Cholesky<TBBMatrix<double>> fullchol{ kmat.full() };
+    Kronecker<CUDAMatrix<double>> kmat{ {mat1, mat2} };
+    Cholesky<CUDAMatrix<double>> fullchol{ kmat.full() };
 
-    Kronecker<Cholesky<TBBMatrix<double>>> kcholmat{ { mat1, mat2 } };
+    Kronecker<Cholesky<CUDAMatrix<double>>> kcholmat{ { mat1, mat2 } };
 
-    TBBMatrix<double> sw(4,1);
+    CUDAMatrix<double> sw(4,1);
     sw = 0, 1, 2, 3;
 
     EXPECT_TRUE(kcholmat.solve(sw).tol_eq(fullchol.solve(sw), 1e-10));

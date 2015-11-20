@@ -11,8 +11,9 @@
 #include "matrix.h"
 #include <thrust/copy.h>
 #include <thrust/iterator/counting_iterator.h>
+namespace kronlib {
 
-template <typename Matrix>
+template <typename Matrix, typename = void>
 class Cholesky {
     using Storage = typename Matrix::Storage;
     using T = typename Storage::value_type;
@@ -61,4 +62,16 @@ public:
 
 };
 
+
+//////////////////////////////////////// 
+// IF CUDA < 7 CHOLESKY NOT SUPPORTED //
+// COPY MATRIX TO HOST                //
+////////////////////////////////////////
+template <typename T>
+class Cholesky<Matrix<backend::CUDAContext<T>>, typename std::enable_if< (backend::CUDAContext<T>::version < 7) >::type> {
+    private:
+        Cholesky();
+};
+
+};
 #endif //KRONMAT_CHOLESKY_H

@@ -301,9 +301,9 @@ TEST(Matrix, ProductShape)
 
 TEST(Matrix, BigProductSingleCUDA)
 {
-    int M = 200;
-    int N = 200;
-    int K = 200;
+    int M = 20;
+    int N = 20;
+    int K = 20;
     CUDAMatrix<float> hmat1(M, N);
     CUDAMatrix<float> hmat2(N, K);
     for (int r = 0; r < M; ++r) {

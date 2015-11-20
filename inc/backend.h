@@ -26,6 +26,7 @@ namespace kronlib {
                 T zero_val = 0;
                 T one_val = 1;
             public:
+                static const bool allowChol = true;
                 using Storage = thrust::host_vector<T>;
                 thrust::system::cpp::detail::par_t exec() const { return thrust::cpp::par; }
                 T * one() { return &one_val; };
@@ -38,6 +39,7 @@ namespace kronlib {
                 T zero_val = 0;
                 T one_val = 1;
             public:
+                static const bool allowChol = true;
                 using Storage = thrust::system::tbb::vector<T>;
                 thrust::system::tbb::detail::par_t exec() const { return thrust::tbb::par; }
                 T * one() { return &one_val; };
@@ -49,6 +51,7 @@ namespace kronlib {
             private: 
                 T * devMemory;
             public:
+                static const int version = (CUDA_VERSION / 1000);  // CUDA7 + has CUSOLVER
                 cudaStream_t stream;
                 cublasHandle_t blas;
 #ifdef CUSOLVER

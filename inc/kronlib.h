@@ -5,6 +5,7 @@
 #include "matrix.h"
 #include "util.h"
 #include "cholesky.h"
+#include "kronvecstack.h"
 #include "kronecker_matrix.h"
 
 namespace kronlib {
