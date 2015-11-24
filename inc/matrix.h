@@ -47,6 +47,8 @@ public:
     using Storage = typename Backend::Storage;
     Matrix(std::shared_ptr<Backend> context_, Storage data_, size_t r_,size_t c_) : context{context_}, data{data_}, nr{r_}, nc{c_} {}
     Matrix(size_t r_, size_t c_) : Matrix(std::make_shared<Backend>(), Storage(r_ * c_), r_, c_) {}
+    Matrix(std::shared_ptr<Backend> context, size_t r_, size_t c_) : Matrix(context, Storage(r_ * c_), r_, c_) {}
+    Matrix(const Matrix & other) : Matrix(other.getContext(), other.getConstData(), other.nR(), other.nC()) {}
     template <typename OtherBackend>
         Matrix(const Matrix<OtherBackend> & other) : Matrix(std::make_shared<Backend>(), other.getConstData(), other.nR(), other.nC()) {}
 
@@ -142,31 +144,89 @@ public:
         return data[vecidx(ridx, cidx)];
     }
 
-    Matrix<Backend> operator*(const Matrix<Backend> &other) const
+    Matrix<Backend> operator*(const Matrix<Backend> & other) {return dot(other); }
+    Matrix<Backend> dot(const Matrix<Backend> & other) { return dot(None, other, None); }
+    Matrix<Backend> dot(BlasTranspose meTrans, const Matrix<Backend> &other, BlasTranspose otherTrans) const
     {
-        BlasTranspose meTrans = N;
-        BlasTranspose otherTrans = N;
-        int M, N, K, lda, ldb, ldc;
+        int Mme, Nme, Mother, Nother, Mc, Nc, K;
+        switch (meTrans) 
+        {
+            case None:
+                Mme = nR();
+                Nme = nC();
+                break;
+            case Trans:
+            case Conj:
+                Mme = nC();
+                Nme = nR();
+                break;
+        }
+        switch (otherTrans)
+        {
+            case None:
+                Mother = other.nR();
+                Nother = other.nC();
+                break;
+            case Trans:
+            case Conj:
+                Mother = other.nC();
+                Nother = other.nR();
+                break;
+        }
+        if (Mother != Nme)
+        { 
+            std::cout << "Matrices must align \n";
+            std::cout << "You gave a matrix of " << Mme << " x " << Nme << " and " << Mother << " x " << Nother << std::endl;
+            std::cout << "Exiting at " << __LINE__ << " of " << __FILE__ << std::endl;
+            exit(0);
+        }
+        Mc = Mme;
+        Nc = Nother;
+        K = Nme;
+        return dot(Mc, K, Nc, meTrans, other, otherTrans);
+    }
+
+    Matrix<Backend> dot(size_t M, size_t K, size_t N, BlasTranspose meTrans, const Matrix<Backend> &other, BlasTranspose otherTrans) const
+    {
+        int lda, ldb, ldc;
 
         assert(nC() == other.nR());
+        switch (meTrans)
+        {
+            case None:
+                lda = M; // Matrix is col-major and not trans .: leading dim is M
+                break;
+            case Trans:
+            case Conj:
+                lda = K; // Matrix is col-major and trans .: leading dim is K
+                break;
+        }
+        switch (otherTrans) 
+        {
+            case None:
+                ldb = K; // Matrix is col-major and not trans .: leading dim is K
+                break;
+            case Trans:
+            case Conj:
+                ldb = N; // Matrix is col-major and trans .: leading dim is N
+                break;
+        }
 
-        M = nR();  //results matrices rows
-        N = other.nC(); //results matrices cols
-        K = nC(); // this matrices columns == other matrices rows
+        ldc = nR(); // size of leading dim of answer matrix - as col-major in memory
 
-        lda = nR(); // size of leading dim of this matrix
-        ldb = other.nR(); // size of leading dim of other matrix
-        ldc = nR(); // size of leading dim of answer matrix
+        Matrix<Backend> ans(getContext(), M, N);
 
-        Storage new_data;
-        new_data.resize(nR() * other.nC());
+        dot_into(M, K, N, meTrans, lda, other, ldb, otherTrans, ans, ldc);
 
+        return ans;
+    }
+    void dot_into(size_t M, size_t K, size_t N, BlasTranspose meTrans, int lda, const Matrix<Backend> &other, int ldb, BlasTranspose otherTrans, Matrix<Backend> &dest, int ldc) const {
         blas_gemm(context, COL, meTrans, otherTrans, M, N, K, context->one(),
                   data, lda, other.getConstData(), ldb,
-                  context->zero(), new_data, ldc);
-
-        return Matrix(context, new_data, nR(), other.nC());
+                  context->zero(), dest.getMutableData(), ldc);
     }
+
+
 
     /* Removed until I can get clearer idea of how to make mutable transpose work
     Matrix<Backend> Tdot(const Matrix<Storage> &other)
@@ -416,5 +476,5 @@ Matrix<Backend> operator*(N val, const Matrix<typename Backend::Storage> & m)
     return m * val;
 }
 
-}
+} // kronlib namespace
 #endif //KRONMAT_Matrix_H

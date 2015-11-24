@@ -122,6 +122,17 @@ TEST(Matrix, Inequality)
     ASSERT_FALSE(mat1 == mat2);
 }
 
+TEST(Matrix, NonSquareTrans)
+{
+    HostMatrix<float> mat1(2, 3);
+    mat1 = 1, 3, 5, 2, 4, 6;
+    
+    HostMatrix<float> mat2(3, 2);
+    mat2 = 1, 2, 3, 4, 5, 6;
+
+    EXPECT_EQ(mat1, mat2.transpose());
+
+}
 TEST(Matrix, TransposeIndexing)
 {
     HostMatrix<float> mat(20, 30);
@@ -297,6 +308,59 @@ TEST(Matrix, ProductShape)
     EXPECT_EQ(mat_prod.nR(), mat_ans.nR());
     EXPECT_EQ(mat_prod.nC(), mat_ans.nC());
 
+}
+
+TEST(Matrix, ComplexProductOne)
+{
+    HostMatrix<float> mat1(3, 2);
+    mat1 = 1, 2, 3, 4, 5, 6;
+
+    HostMatrix<float> mat2(3, 1);
+    mat2 = 1, 2, 3;
+    
+    auto mat_ans = mat1.transpose().dot(mat2);
+
+    EXPECT_EQ(mat1.dot(Trans, mat2, None), mat_ans);
+
+}
+TEST(Matrix, ComplexProductTwo)
+{
+
+    HostMatrix<float> mat1(1, 3);
+    mat1 = 1, 2, 3;
+
+    HostMatrix<float> mat2(2, 3);
+    mat2 = 1, 2, 3, 4, 5, 6;
+    
+    auto mat_ans = mat1.dot(mat2.transpose());
+
+    EXPECT_EQ(mat1.dot(None, mat2, Trans), mat_ans);
+
+}
+TEST(Matrix, ComplexProductThree)
+{
+
+    HostMatrix<float> mat1(1, 3);
+    mat1 = 1, 2, 3;
+
+    HostMatrix<float> mat2(3, 2);
+    mat2 = 1, 2, 3, 4, 5, 6;
+    auto mat_ans = mat1.dot(mat2.reshape(2, 3).transpose());
+
+    EXPECT_EQ(mat1.dot(1, 3, 2, None, mat2, Trans), mat_ans);
+}
+
+TEST(Matrix, ComplexProductFour)
+{
+
+    HostMatrix<float> mat1(2, 3);
+    mat1 = 1, 2, 3, 4, 5, 6;
+
+    HostMatrix<float> mat2(3, 2);
+    mat2 = 1, 2, 3, 4, 5, 6;
+    auto mat_ans = mat1.reshape(3, 2).transpose() * mat2.reshape(2, 3).transpose();
+
+    EXPECT_EQ(mat1.dot(2, 3, 2, Trans, mat2, Trans), mat_ans);
 }
 
 TEST(Matrix, BigProductSingleHost)

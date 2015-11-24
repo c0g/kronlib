@@ -44,5 +44,21 @@ std::ostream& operator<<(
     K.print_submatrices(out);
     return out;
 }
+
+template<typename MatrixType>
+MatrixType dot(const KroneckerVectorStack<MatrixType> & kvs, const MatrixType & vec) 
+{
+    assert(vec.nC() == 1); // Must be a column vector!
+
 }
+
+template<typename MatrixType>
+MatrixType dot(const MatrixType & vec, const KroneckerVectorStack<MatrixType> & kvs) 
+{
+    assert(vec.nR() == 1); // must be a row vector!
+    // We do one stage like a normal vec * kronmat -
+    // vec.reshape(m, k).transpose() * kvs_0
+
+}
+} // kronlib
 #endif //KRONMAT_KRONVECSTACK_H
