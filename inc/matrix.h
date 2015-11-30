@@ -80,6 +80,7 @@ private:
 public:
 
     std::shared_ptr<Backend> getContext() const { return context; };
+    void swapStorage(Storage & newData) { std::swap(data, newData); } 
     const T * begindata() const
     {
         return data.data();
@@ -144,8 +145,8 @@ public:
         return data[vecidx(ridx, cidx)];
     }
 
-    Matrix<Backend> operator*(const Matrix<Backend> & other) {return dot(other); }
-    Matrix<Backend> dot(const Matrix<Backend> & other) { return dot(None, other, None); }
+    Matrix<Backend> operator*(const Matrix<Backend> & other) const {return dot(other); }
+    Matrix<Backend> dot(const Matrix<Backend> & other) const { return dot(None, other, None); }
     Matrix<Backend> dot(BlasTranspose meTrans, const Matrix<Backend> &other, BlasTranspose otherTrans) const
     {
         int Mme, Nme, Mother, Nother, Mc, Nc, K;
@@ -190,7 +191,6 @@ public:
     {
         int lda, ldb, ldc;
 
-        assert(nC() == other.nR());
         switch (meTrans)
         {
             case None:
@@ -211,13 +211,9 @@ public:
                 ldb = N; // Matrix is col-major and trans .: leading dim is N
                 break;
         }
-
-        ldc = nR(); // size of leading dim of answer matrix - as col-major in memory
-
+        ldc = M; // size of leading dim of answer matrix - as col-major in memory
         Matrix<Backend> ans(getContext(), M, N);
-
         dot_into(M, K, N, meTrans, lda, other, ldb, otherTrans, ans, ldc);
-
         return ans;
     }
     void dot_into(size_t M, size_t K, size_t N, BlasTranspose meTrans, int lda, const Matrix<Backend> &other, int ldb, BlasTranspose otherTrans, Matrix<Backend> &dest, int ldc) const {
@@ -228,15 +224,6 @@ public:
 
 
 
-    /* Removed until I can get clearer idea of how to make mutable transpose work
-    Matrix<Backend> Tdot(const Matrix<Storage> &other)
-    {
-        mutable_transpose();
-        auto ans = (*this) * other;
-        mutable_transpose();
-        return ans;
-    }
-    */
 /*
     Matrix<Backend> operator*(const KroneckerVectorStack<T> kvs) {
         assert(nR() == 1 && "Only works when matrix is a row vector!");

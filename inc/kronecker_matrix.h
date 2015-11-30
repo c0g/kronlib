@@ -7,7 +7,9 @@
 
 #include <vector>
 #include <deque>
-#include "kronlib.h"
+//#include "kronlib.h"
+#include "matrix.h"
+#include "kronvecstack.h"
 
 namespace kronlib {
 
@@ -31,7 +33,7 @@ public:
         return subMatrices;
     }
 
-    void push(const MatrixType & mat)
+    void push_back(const MatrixType & mat)
     {
         subMatrices.push_back(mat);
     }
@@ -172,6 +174,16 @@ std::ostream& operator<< (
 //     mutable_transpose();
 //     return ans;
 // }
+template<typename MatrixType>
+Kronecker<MatrixType> dot(const KroneckerVectorStack<MatrixType> & kvs, const MatrixType & vec)
+{
+    assert(vec.nC() == 1); // Must be a column vector!
+    Kronecker<MatrixType> ans;
+    auto dotwith = [&](const MatrixType & mat) { return mat.dot(vec); };
+    const std::vector<MatrixType> & kvs_vec = kvs.getSubMatrices();
+    std::transform(kvs_vec.begin(), kvs_vec.end(), std::back_inserter(ans.getMutableSubMatrices()), dotwith);
+    return ans;
+}
 };
 #endif //KRONMAT_KRONMAT_H
 

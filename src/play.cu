@@ -4,17 +4,13 @@
 using namespace kronlib;
 
 int main() {
-    TBBMatrix<float> tbb(3000, 3000);
-    CUDAMatrix<float> cuda(3000, 3000);
-    HostMatrix<float> host(3000, 3000);
-
-    auto tbbp = tbb * tbb.transpose();
-    tbbp.negate_inplace();
-
-    auto cudap = cuda * cuda.transpose();
-    cudap.negate_inplace();
-    auto hostp = host * host.transpose();
-    hostp.negate_inplace();
+    CUDAMatrix<float> one(100, 100);
+    CUDAMatrix<float> two(100, 100);
+    CUDAMatrix<float> three(100, 100);
+    KroneckerVectorStack<CUDAMatrix<float>> kvs{ std::vector<CUDAMatrix<float>>{one, two, three} };
+    CUDAMatrix<float> leftvec(1, 100 * 100 * 100);
+    std::cout << dot(leftvec, kvs).nR() << std::endl;
+    std::cout << dot(leftvec, kvs).nC() << std::endl;
 
     return 0;
 }

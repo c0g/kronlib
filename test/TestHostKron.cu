@@ -14,8 +14,8 @@ TEST(KronMatrix, RowsAndColumn)
     HostMatrix<float> mat1(2, 3);
     HostMatrix<float> mat2(2, 3);
     Kronecker<HostMatrix<float>> kron_mat;
-    kron_mat.push(mat1);
-    kron_mat.push(mat2);
+    kron_mat.push_back(mat1);
+    kron_mat.push_back(mat2);
     EXPECT_EQ(mat1.nR() * mat2.nR(), kron_mat.nR());
     EXPECT_EQ(mat1.nC() * mat2.nC(), kron_mat.nC());
 }
@@ -31,8 +31,8 @@ TEST(KronMatrix, KronFull2)
     mat_ans = 3,  4,  6,  8,  5,  6, 10, 12,  9, 12, 12, 16, 15, 18, 20, 24;
 
     Kronecker<HostMatrix<float>> kron_mat;
-    kron_mat.push(mat1);
-    kron_mat.push(mat2);
+    kron_mat.push_back(mat1);
+    kron_mat.push_back(mat2);
 
     EXPECT_EQ(kron_mat.full(), mat_ans);
 }
@@ -56,9 +56,9 @@ TEST(KronMatrix, KronFull3)
     140, 160, 144, 168, 192;
 
     Kronecker<HostMatrix<float>> kron_mat;
-    kron_mat.push(mat1);
-    kron_mat.push(mat2);
-    kron_mat.push(mat3);
+    kron_mat.push_back(mat1);
+    kron_mat.push_back(mat2);
+    kron_mat.push_back(mat3);
 
     EXPECT_EQ(kron_mat.full(), mat_ans);
 }
@@ -71,8 +71,8 @@ TEST(KronMatrix, KronDotKron)
     mat2a = 3, 4, 5, 6;
 
     Kronecker<HostMatrix<float>> kron_mat1;
-    kron_mat1.push(mat1a);
-    kron_mat1.push(mat2a);
+    kron_mat1.push_back(mat1a);
+    kron_mat1.push_back(mat2a);
 
     HostMatrix<float> mat1b(2, 2);
     mat1b = 3, 4, 5, 6;
@@ -80,8 +80,8 @@ TEST(KronMatrix, KronDotKron)
     mat2b = 4, 5, 6, 7;
 
     Kronecker<HostMatrix<float>> kron_mat2;
-    kron_mat2.push(mat1b);
-    kron_mat2.push(mat2b);
+    kron_mat2.push_back(mat1b);
+    kron_mat2.push_back(mat2b);
 
     auto kron_mat = kron_mat1 * kron_mat2;
 
@@ -100,8 +100,8 @@ TEST(KronMatrix, KronDotFullVec)
     mat2 = 3, 4, 5, 6;
 
     Kronecker<HostMatrix<float>> kmat;
-    kmat.push(mat1);
-    kmat.push(mat2);
+    kmat.push_back(mat1);
+    kmat.push_back(mat2);
 
     HostMatrix<float> dot_with(4,1);
     dot_with = 0, 1, 2, 3;
