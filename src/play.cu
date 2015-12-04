@@ -1,33 +1,60 @@
 #include <iostream>
+#include <boost/timer/timer.hpp>
 #include "kronlib.h"
 
 using namespace kronlib;
+using timer = boost::timer::auto_cpu_timer;
 
 int main() {
 
-    HostMatrix<float> mat1(2,2);
-    mat1 = 1, 2,
-           3, 4;
+    CUDAMatrix<float> _cmat1(3, 3);
+    auto cans_ = _cmat1 * _cmat1;
 
-    auto ans1 = mat1 * mat1;
-    auto ans2 = mat1.elemwise_mult(ans1);
-    auto ans3 = mat1.dot(Trans, mat1, None);
-    
-    HostMatrix<double> dmat = ans3;
-    Cholesky<HostMatrix<float>> chol{ dmat };
-    std::cout << chol.solve(dmat);
+    timer ct1;
+    for (int i = 0; i < 50; ++i) {
+        CUDAMatrix<float> cmat1(2000, 2000);
+        auto cans1 = cmat1 * cmat1;
+    }
+    std::cout << ct1.format() << std::endl;
+    ct1.stop();
 
-    Kronecker<HostMatrix<float>> kron{ {ans1, ans2, ans3} };
+    timer ht1;
+    for (int i = 0; i < 50; ++i) {
+        HostMatrix<float> mat1(2000, 2000);
+        auto ans1 = mat1 * mat1;
+    }
+    std::cout << ht1.format() << std::endl;
+    ht1.stop();
 
-    CUDAMatrix<float> cuda{ mat1 };
+    timer ct2;
+    for (int i = 0; i < 50; ++i) {
+        CUDAMatrix<float> cone(200, 500);
+        CUDAMatrix<float> ctwo(200, 500);
+        CUDAMatrix<float> cthree(200, 500);
+        KroneckerVectorStack<CUDAMatrix<float>> ckvs;
+        ckvs.push_back( cone );
+        ckvs.push_back( ctwo );
+        ckvs.push_back( cthree );
+        CUDAMatrix<float> cleftvec(1, 200 * 200 * 200);
+        dot(cleftvec, ckvs);
+    }
+    std::cout << ct2.format() << std::endl;
+    ct2.stop();
 
-    CUDAMatrix<float> one(100, 100);
-    CUDAMatrix<float> two(500, 100);
-    CUDAMatrix<float> three(100, 100);
-    KroneckerVectorStack<CUDAMatrix<float>> kvs{ {one, two, three} };
-    CUDAMatrix<float> leftvec(1, 100 * 500 * 100);
-    std::cout << dot(leftvec, kvs).nR() << std::endl;
-    std::cout << dot(leftvec, kvs).nC() << std::endl;
+    timer ht2;
+    for (int i = 0; i < 50; ++i) {
+        HostMatrix<float> one(200, 500);
+        HostMatrix<float> two(200, 500);
+        HostMatrix<float> three(200, 500);
+        KroneckerVectorStack<HostMatrix<float>> kvs;
+        kvs.push_back( one );
+        kvs.push_back( two );
+        kvs.push_back( three );
+        HostMatrix<float> leftvec(1, 200 * 200 * 200);
+        dot(leftvec, kvs);
+    }
+    std::cout << ht2.format() << std::endl;
+    ht2.stop();
 
     return 0;
 }

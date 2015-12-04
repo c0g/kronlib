@@ -23,7 +23,8 @@ public:
         return sub_matrices;
     }
 
-    void add_dimension(const Matrix & mat)
+    void add_dimension(const Matrix & mat) { push_back(mat); }
+    void push_back(const Matrix & mat)
     {
         sub_matrices.push_back(mat);
     }
@@ -121,7 +122,6 @@ MatrixType dot(const MatrixType & vec, const KroneckerVectorStack<MatrixType> & 
     // element is the dot products along columns of step1 and that kvs member
     // we then swap this matrix and step1 and continue in the loop
     //for (const auto & val : tmp) std::cout << val << ", ";
-    std::cout << std::endl;
     for (size_t d = dim - 2; d != 0; --d) 
     {
         // src_it indexes tmp, which is a dense matrix. 
@@ -178,13 +178,12 @@ MatrixType dot(const MatrixType & vec, const KroneckerVectorStack<MatrixType> & 
         h_tmp /= h_kvs_el;
         thrust::swap( out, tmp );
         //for (const auto & val : tmp) std::cout << val << ", ";
-        std::cout << std::endl;
     }
     // Finally, data is in tmp. Allocate a matrix and do the same algo into that:
     const MatrixType & kvs_el = kvs.getSubMatrices()[0];
     size_t h_kvs_el = kvs_el.nR();
     size_t w_kvs_el = kvs_el.nC();
-    MatrixType ans{1, kvs_el.nC()};
+    MatrixType ans(1, kvs_el.nC());
     thrust::counting_iterator<size_t> tmp_idx(0);
     auto kvs_idx = thrust::make_transform_iterator(tmp_idx, kvs_iterator(h_kvs_el, h_tmp));
     auto kvs_it = thrust::make_permutation_iterator(kvs_el.getConstData().begin(), kvs_idx);

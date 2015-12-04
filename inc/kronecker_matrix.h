@@ -7,6 +7,7 @@
 
 #include <vector>
 #include <deque>
+#include <algorithm>
 //#include "kronlib.h"
 #include "matrix.h"
 #include "kronvecstack.h"

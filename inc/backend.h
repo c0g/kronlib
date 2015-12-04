@@ -54,17 +54,15 @@ namespace kronlib {
                 static const int version = (CUDA_VERSION / 1000);  // CUDA7 + has CUSOLVER
                 cudaStream_t stream;
                 cublasHandle_t blas;
+                int * minor;// not used in CUDA < 7
 #ifdef CUSOLVER
                 cusolverDnHandle_t solver;
-                int * minor;
 #endif
-#ifdef CUSOLVER
                 int getMinor() {
                     int hminor;
                     cudaMemcpy(&hminor, minor, sizeof(int) * 1, cudaMemcpyDeviceToHost); 
                     return hminor;
                 }
-#endif
 
                 using Storage = thrust::system::cuda::vector<T>;
                 CUDAContext(cudaStream_t _stream = 0) {
@@ -86,8 +84,8 @@ namespace kronlib {
                 ~CUDAContext() {
 #ifdef CUSOLVER
                     cusolverDnDestroy(solver);
-                    cudaFree(minor);
 #endif
+                    cudaFree(minor);
                     cublasDestroy(blas);
                     cudaFree(devMemory);
                 }

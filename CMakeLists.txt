@@ -1,19 +1,8 @@
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 2.8)
 project(KronMat)
 add_definitions(-DTHRUST_DEVICE_SYSTEM=THRUST_DEVICE_SYSTEM_CUDA)
 add_definitions(-DDLIB_NO_GUI_SUPPORT)
 
-if(MSVC)
-  # Force to always compile with W4
-  if(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
-    string(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-  else()
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
-  endif()
-elseif(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
-  # Update if necessary
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-long-long -pedantic")
-endif()
 
 # Additional 'FindX.cmake'
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/CMake/Modules)
@@ -24,7 +13,7 @@ include("test/gtest.cmake")
 find_package(OpenBLAS)
 find_package(CUDA)
 find_package(TBB)
-find_package(Boost)
+find_package(Boost COMPONENTS timer system REQUIRED)
 message("CUDA version ${CUDA_VERSION}")
 set(CUSOLVER_LIBRARY, "")
 if(${CUDA_VERSION} LESS 7) 
@@ -36,7 +25,7 @@ else()
 endif()
 
 # Compiler flags - if GNU add in openmp
-# set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -G -g")
+set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -std=c++11")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3") 
 
 # Includes
@@ -51,7 +40,7 @@ else()
 	add_executable(KronMat ${SOURCE_FILES})
 endif()
 
-target_link_libraries(KronMat ${OpenBLAS_LIB} ${TBB_LIBRARY} ${GTEST_BOTH_LIBRARIES}  ${CUDA_LIBRARIES} )
+target_link_libraries(KronMat ${OpenBLAS_LIB} ${TBB_LIBRARY} ${GTEST_BOTH_LIBRARIES}  ${CUDA_LIBRARIES} ${Boost_TIMER_LIBRARY} ${Boost_SYSTEM_LIBRARY})
 
 # Tests
 enable_testing()
