@@ -29,6 +29,82 @@ TEST(Matrix, SetSeqHost)
     }
 }
 
+TEST(Matrix, ColWiseAdd) 
+{
+    HostMatrix<float> mat(2,2);
+    mat = 1, 2,
+          3, 4;
+    HostMatrix<float> col(2, 1);
+    col = 1, 2;
+
+    mat.col_wise_tiled_add_inplace( col );
+    HostMatrix<float> mat_ans(2,2);
+    mat_ans = 2, 3,
+              5, 6;
+    EXPECT_EQ(mat, mat_ans);
+}
+
+TEST(Matrix, RowWiseAdd) 
+{
+    HostMatrix<float> mat(2,2);
+    mat = 1, 2,
+          3, 4;
+    HostMatrix<float> row(1, 2);
+    row = 1, 2;
+
+    mat.row_wise_tiled_add_inplace( row );
+    HostMatrix<float> mat_ans(2,2);
+    mat_ans = 2, 4,
+              4, 6;
+    EXPECT_EQ(mat, mat_ans);
+}
+
+TEST(Matrix, SumSqCol)
+{
+    HostMatrix<float> mat(4,2);
+    mat = 1, 2,
+          1, 2,
+          3, 6,
+          7, 1;
+    auto ans = mat.sumsq_cols();
+    HostMatrix<float> true_ans(4,1);
+    true_ans = 5,
+               5,
+               45,
+               50;
+    EXPECT_EQ(ans, true_ans);
+}
+
+TEST(Matrix, ColWiseMult) 
+{
+    HostMatrix<float> mat(2,2);
+    mat = 1, 2,
+          3, 4;
+    HostMatrix<float> col(2, 1);
+    col = 1, 2;
+
+    mat.col_wise_tiled_mult_inplace( col );
+    HostMatrix<float> mat_ans(2,2);
+    mat_ans = 1, 2,
+              6, 8;
+    EXPECT_EQ(mat, mat_ans);
+}
+
+TEST(Matrix, RowWiseMult) 
+{
+    HostMatrix<float> mat(2,2);
+    mat = 1, 2,
+          3, 4;
+    HostMatrix<float> row(1, 2);
+    row = 1, 2;
+
+    mat.row_wise_tiled_mult_inplace( row );
+    HostMatrix<float> mat_ans(2,2);
+    mat_ans = 1, 4,
+              3, 8;
+    EXPECT_EQ(mat, mat_ans);
+}
+
 TEST(Matrix, MinusInplaceHost)
 {
     HostMatrix<float> mat(2, 2);
