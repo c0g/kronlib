@@ -225,6 +225,7 @@ public:
     }
 
     struct nop_indexer : std::unary_function<size_t, size_t> {
+        __host__ __device__
         size_t operator()(size_t idx) { return idx; }
     };
     struct row_indexer : std::unary_function<size_t, size_t> {
