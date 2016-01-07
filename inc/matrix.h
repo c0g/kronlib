@@ -1,4 +1,3 @@
-
 // Created by Thomas Nickson on 12/06/15.
 //
 
@@ -6,6 +5,7 @@
 #define KRONMAT_MATRIX_H
 
 #include <vector>
+#include <functional>
 #include <iostream>
 #include <assert.h>
 #include "backend.h"
@@ -45,10 +45,11 @@ class Matrix  {
     //friend KroneckerVectorStack<Backend, T>;
 public:
     using Storage = typename Backend::Storage;
+    Matrix() : Matrix(std::make_shared<Backend>(), Storage{0}, 0, 0) {};
     Matrix(std::shared_ptr<Backend> context_, Storage data_, size_t r_,size_t c_) : context{context_}, data{data_}, nr{r_}, nc{c_} {}
     Matrix(size_t r_, size_t c_) : Matrix(std::make_shared<Backend>(), Storage(r_ * c_), r_, c_) {}
     Matrix(std::shared_ptr<Backend> context, size_t r_, size_t c_) : Matrix(context, Storage(r_ * c_), r_, c_) {}
-    Matrix(const Matrix & other) : Matrix(other.getContext(), other.getConstData(), other.nR(), other.nC()) {}
+    //Matrix(const Matrix & other) : Matrix(other.getContext(), other.getConstData(), other.nR(), other.nC()) {}
     template <typename OtherBackend>
         Matrix(const Matrix<OtherBackend> & other) : Matrix(std::make_shared<Backend>(), other.getConstData(), other.nR(), other.nC()) {}
 
@@ -178,9 +179,10 @@ public:
         { 
             std::cout << "Matrices must align \n";
             std::cout << "You gave a matrix of " << Mme << " x " << Nme << " and " << Mother << " x " << Nother << std::endl;
-            std::cout << "Exiting at " << __LINE__ << " of " << __FILE__ << std::endl;
-            exit(0);
+            std::cout << "This is an error" << std::endl;
+            exit(-1);
         }
+
         Mc = Mme;
         Nc = Nother;
         K = Nme;
@@ -222,7 +224,85 @@ public:
                   context->zero(), dest.getMutableData(), ldc);
     }
 
+    struct nop_indexer : std::unary_function<size_t, size_t> {
+        size_t operator()(size_t idx) { return idx; }
+    };
+    struct row_indexer : std::unary_function<size_t, size_t> {
+        size_t leading;
+        __host__ __device__
+            row_indexer( size_t leading ) : leading{leading} {}
+        __host__ __device__
+            size_t operator()( size_t idx ) { return idx / leading; }
+    };
+    void row_wise_tiled_add_inplace( const Matrix<Backend> & row )
+    {
+        row_indexer odx{nR()};
+        nop_indexer mdx;
+        thrust::plus<T> op;
+        permuted_op_inplace(mdx, odx, op, row);
+    }
 
+    struct col_indexer : std::unary_function<size_t, size_t> {
+        size_t leading;
+        __host__ __device__
+            col_indexer( size_t leading ) : leading{leading} {}
+        __host__ __device__
+            size_t operator()( size_t idx ) { return idx % leading; }
+    };
+    void col_wise_tiled_add_inplace( const Matrix<Backend> & col )
+    {
+        col_indexer odx{nR()};
+        nop_indexer mdx;
+        thrust::plus<T> op;
+        permuted_op_inplace(mdx, odx, op, col);
+    }
+
+    void row_wise_tiled_mult_inplace( const Matrix<Backend> & row )
+    {
+        row_indexer odx{nR()};
+        nop_indexer mdx;
+        thrust::multiplies<T> op;
+        permuted_op_inplace(mdx, odx, op, row);
+    }
+
+    void col_wise_tiled_mult_inplace( const Matrix<Backend> & col )
+    {
+        col_indexer odx{nR()};
+        nop_indexer mdx;
+        thrust::multiplies<T> op;
+        permuted_op_inplace(mdx, odx, op, col);
+    }
+
+    template <typename MeIndex, typename OtherIndex, typename Op>
+    void permuted_op_inplace(MeIndex mdx, OtherIndex odx, Op op, const Matrix<Backend> & other)
+    {
+        permuted_op_into(mdx, odx, mdx, op, other, (*this));
+    }
+    template <typename MeIndex, typename OtherIndex, typename TargetIndex, typename Op>
+    void permuted_op_into(MeIndex mdx, OtherIndex odx, TargetIndex tdx, Op op, const Matrix<Backend> & other, Matrix<Backend> & target)
+    {
+        auto counter = thrust::make_counting_iterator(0);
+        auto mdxer = thrust::make_transform_iterator(counter, mdx);
+        auto odxer = thrust::make_transform_iterator(counter, odx);
+        auto tdxer = thrust::make_transform_iterator(counter, tdx);
+        auto mbegin = thrust::make_permutation_iterator(data.begin(), mdxer);
+        auto mend = mbegin + data.size();
+        auto otherbegin = thrust::make_permutation_iterator(other.getConstData().begin(), odxer);
+        auto tbegin = thrust::make_permutation_iterator(target.getMutableData().begin(), tdxer);
+        thrust::transform(mbegin, mend, otherbegin, tbegin, op);
+    }
+    template <typename T>
+    struct square : std::unary_function<T,T> {
+        __host__ __device__
+            T operator()(T val) { return val * val; }
+    };
+    Matrix<Backend> sumsq_cols() const 
+    {
+        Matrix<Backend> squared = elemwise_mult(*this);
+        Matrix<Backend> ones{nC(), 1};
+        ones = 1;
+        return squared.dot(ones);
+    }
 
 /*
     Matrix<Backend> operator*(const KroneckerVectorStack<T> kvs) {

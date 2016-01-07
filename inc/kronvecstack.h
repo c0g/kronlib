@@ -7,6 +7,7 @@
 
 #include "matrix.h"
 #include <functional>
+#include <numeric>
 namespace kronlib {
 template <typename Matrix>
 class KroneckerVectorStack {
@@ -35,7 +36,16 @@ public:
     {
         for (const auto & m : sub_matrices) out << "Matrix: " << std::endl << m << std::endl;;
     }
-
+    bool operator==(const KroneckerVectorStack & other) const
+    {
+        return std::inner_product( getSubMatrices().begin(),
+                getSubMatrices().end(),
+                other.getSubMatrices().begin(),
+                true,
+                std::logical_or<bool>(), // reduction operator
+                std::equal_to<Matrix>() // comparison operator
+                );
+    }
 };
 template <typename T>
 std::ostream& operator<<(
@@ -45,18 +55,6 @@ std::ostream& operator<<(
     K.print_submatrices(out);
     return out;
 }
-/*
-template<typename MatrixType>
-MatrixType dot(const KroneckerVectorStack<MatrixType> & kvs, const MatrixType & vec) 
-{
-    assert(vec.nC() == 1); // Must be a column vector!
-    Kronecker<MatrixType> ans;
-    auto dotwith = [&](const MatrixType & mat) { return mat.dot(vec); };
-    const std::vector<MatrixType> & kvs_vec = kvs.getSubMatrices();
-    std::transform(kvs_vec.begin(), kvs_vec.end(), std::back_inserter(ans), dotwith); 
-    return ans;
-}
-*/
 struct key_iterator : std::unary_function<size_t, size_t> {
     size_t h_kvs_el;
     __host__ __device__
